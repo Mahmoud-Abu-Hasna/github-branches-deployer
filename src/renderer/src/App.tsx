@@ -20,8 +20,11 @@ function App(): React.JSX.Element {
 
   async function refreshRepos(): Promise<void> {
     setLoadingRepos(true)
-    setRepos(await window.api.repos.list())
-    setLoadingRepos(false)
+    try {
+      setRepos(await window.api.repos.list())
+    } finally {
+      setLoadingRepos(false)
+    }
   }
 
   function openRepo(repo: RepoConfig): void {

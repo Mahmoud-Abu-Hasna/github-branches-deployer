@@ -1,5 +1,6 @@
 import { FolderGit2, Plus, Trash2 } from 'lucide-react'
 import type { RepoConfig } from '@shared/types'
+import { useToast, messageOf } from '../components/useToast'
 
 interface RepoListPageProps {
   repos: RepoConfig[]
@@ -16,9 +17,15 @@ function RepoListPage({
   onReposChanged,
   onAddRepoClick
 }: RepoListPageProps): React.JSX.Element {
+  const { showError } = useToast()
+
   async function handleRemove(id: string): Promise<void> {
-    await window.api.repos.remove(id)
-    onReposChanged()
+    try {
+      await window.api.repos.remove(id)
+      onReposChanged()
+    } catch (err) {
+      showError(messageOf(err))
+    }
   }
 
   return (

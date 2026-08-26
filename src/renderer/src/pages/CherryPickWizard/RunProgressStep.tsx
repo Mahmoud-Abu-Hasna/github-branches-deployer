@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import type { BranchRunResult, CherryPickProgressEvent, RepoConfig } from '@shared/types'
 import ConflictResolutionStep from './ConflictResolutionStep'
+import { useToast, messageOf } from '../../components/useToast'
 
 interface RunProgressStepProps {
   repo: RepoConfig
@@ -27,6 +28,7 @@ function RunProgressStep({
   const [conflict, setConflict] = useState<ConflictInfo | null>(null)
   const runIdRef = useRef<string | null>(null)
   const started = useRef(false)
+  const { showError } = useToast()
 
   function pushLine(kind: LogKind, text: string): void {
     setLog((prev) => [...prev, { kind, text }])
@@ -77,6 +79,10 @@ function RunProgressStep({
       .then(({ runId }) => {
         runIdRef.current = runId
       })
+      .catch((err: unknown) => {
+        pushLine('error', `Failed to start: ${messageOf(err)}`)
+        showError(messageOf(err))
+      })
 
     return unsubscribe
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -84,15 +90,25 @@ function RunProgressStep({
 
   async function handleContinue(): Promise<void> {
     if (!runIdRef.current) return
-    setConflict(null)
-    await window.api.git.continueCherryPick(runIdRef.current)
+    try {
+      // Only clear the conflict view on success — if continue fails (e.g. a
+      // file still has unresolved conflicts), the user needs to see it again.
+      await window.api.git.continueCherryPick(runIdRef.current)
+      setConflict(null)
+    } catch (err) {
+      showError(messageOf(err))
+    }
   }
 
   async function handleAbort(): Promise<void> {
     if (!runIdRef.current) return
-    await window.api.git.abortCherryPick(runIdRef.current)
-    setConflict(null)
-    pushLine('error', 'Aborted by user.')
+    try {
+      await window.api.git.abortCherryPick(runIdRef.current)
+      setConflict(null)
+      pushLine('error', 'Aborted by user.')
+    } catch (err) {
+      showError(messageOf(err))
+    }
   }
 
   if (conflict) {

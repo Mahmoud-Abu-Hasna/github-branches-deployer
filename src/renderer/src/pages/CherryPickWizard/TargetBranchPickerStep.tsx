@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { GitBranch } from 'lucide-react'
+import { AlertTriangle, GitBranch } from 'lucide-react'
 import type { BranchInfo, RepoConfig } from '@shared/types'
 
 interface TargetBranchPickerStepProps {
@@ -21,16 +21,28 @@ function TargetBranchPickerStep({
 }: TargetBranchPickerStepProps): React.JSX.Element {
   const [branches, setBranches] = useState<BranchInfo[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    window.api.git
-      .listBranches(repo.id)
-      .then((all) => {
-        const localOnly = all.filter((b) => !b.isRemote && b.name !== sourceBranch)
-        setBranches(localOnly)
-      })
-      .finally(() => setLoading(false))
+    // loadBranches is a stable async fetch-on-mount-and-on-dep-change
+    // function declared just below, identical to RepoDashboardPage's pattern.
+    // eslint-disable-next-line react-hooks/immutability
+    void loadBranches()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [repo.id, sourceBranch])
+
+  async function loadBranches(): Promise<void> {
+    setError(null)
+    setLoading(true)
+    try {
+      const all = await window.api.git.listBranches(repo.id)
+      setBranches(all.filter((b) => !b.isRemote && b.name !== sourceBranch))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setLoading(false)
+    }
+  }
 
   function toggle(name: string): void {
     const next = new Set(selected)
@@ -52,6 +64,13 @@ function TargetBranchPickerStep({
 
   return (
     <div className="stack" style={{ flex: 1, minHeight: 0 }}>
+      {error && (
+        <p className="callout">
+          <AlertTriangle size={14} />
+          {error}
+        </p>
+      )}
+
       {loading && (
         <div className="stack">
           <div className="skeleton-row" style={{ height: 34 }} />

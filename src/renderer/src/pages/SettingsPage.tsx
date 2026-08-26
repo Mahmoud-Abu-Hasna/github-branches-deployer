@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Check } from 'lucide-react'
 import type { AppSettings } from '@shared/types'
+import { useToast, messageOf } from '../components/useToast'
 
 function SettingsPage(): React.JSX.Element {
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [saved, setSaved] = useState(false)
+  const { showError } = useToast()
 
   useEffect(() => {
     void window.api.settings.get().then(setSettings)
@@ -12,10 +14,14 @@ function SettingsPage(): React.JSX.Element {
 
   async function handleSave(): Promise<void> {
     if (!settings) return
-    const updated = await window.api.settings.update(settings)
-    setSettings(updated)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 1500)
+    try {
+      const updated = await window.api.settings.update(settings)
+      setSettings(updated)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 1500)
+    } catch (err) {
+      showError(messageOf(err))
+    }
   }
 
   if (!settings) {

@@ -28,6 +28,29 @@ everywhere else in this file; the mechanical design-slop detector found zero
 issues, and `tsc`/`eslint`/`electron-vite build` all pass, but please look at it
 for real and say if anything reads wrong.
 
+## Bug fix: "Add Repo" failing silently
+User reported clicking Browse in Add Repo did nothing (no file explorer, no
+error). Root cause: several async click handlers across the renderer had no
+`try/catch` (`AddRepoDialog.handlePickFolder` in particular), so any failure
+from the main process became an **unhandled promise rejection** — invisible to
+the user. Fixed by:
+- Adding `try/catch` with visible error messages to every previously-unguarded
+  handler (`AddRepoDialog`, `RepoListPage.handleRemove`,
+  `SettingsPage.handleSave`, `CommitPickerStep`/`TargetBranchPickerStep` data
+  loads, `RunProgressStep.handleContinue/handleAbort`,
+  `ConflictResolutionStep.loadVersions/handleOpenInEditor`). Also fixed a
+  related bug in `handleContinue`: it cleared the conflict-resolution view
+  *before* awaiting `continueCherryPick`, so a failed continue (e.g. a file
+  still unresolved) left the user stuck with no way back into that screen.
+- Added a global safety net (`ToastProvider`, `window.addEventListener`
+  `unhandledrejection`/`error`) that surfaces any error I still missed as a
+  dismissible toast, instead of ever failing silently again — this was Phase
+  9.3 ("global error boundary + toast system"), pulled forward because this
+  bug made clear it couldn't wait.
+- Still don't know the *original* root cause of the dialog not opening (never
+  saw the actual error text) — next time it happens, the app will now show it
+  instead of doing nothing, which should make it diagnosable in one round.
+
 ## Phase 0 — Project Setup
 - [x] 0.1 Scaffold with electron-vite `react-ts` template (hand-scaffolded — the
       `create-electron` CLI needs an interactive prompt this environment can't

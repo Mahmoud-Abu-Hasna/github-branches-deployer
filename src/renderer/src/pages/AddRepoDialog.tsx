@@ -13,14 +13,24 @@ function AddRepoDialog({ onClose, onAdded }: AddRepoDialogProps): React.JSX.Elem
   const [baseBranch, setBaseBranch] = useState('main')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [picking, setPicking] = useState(false)
 
   async function handlePickFolder(): Promise<void> {
-    const picked = await window.api.repos.pickLocalFolder()
-    if (!picked) return
-    setLocalPath(picked)
-    if (!name) {
-      const parts = picked.split(/[\\/]/).filter(Boolean)
-      setName(parts[parts.length - 1] ?? '')
+    setError(null)
+    setPicking(true)
+    try {
+      const picked = await window.api.repos.pickLocalFolder()
+      if (!picked) return
+      setLocalPath(picked)
+      if (!name) {
+        const parts = picked.split(/[\\/]/).filter(Boolean)
+        setName(parts[parts.length - 1] ?? '')
+      }
+    } catch (err) {
+      console.error('pickLocalFolder failed:', err)
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setPicking(false)
     }
   }
 
@@ -56,9 +66,9 @@ function AddRepoDialog({ onClose, onAdded }: AddRepoDialogProps): React.JSX.Elem
           Local folder
           <div className="row">
             <input type="text" value={localPath} readOnly placeholder="No folder selected" style={{ flex: 1 }} />
-            <button type="button" className="btn btn-secondary" onClick={handlePickFolder}>
+            <button type="button" className="btn btn-secondary" onClick={handlePickFolder} disabled={picking}>
               <FolderOpen size={14} />
-              Browse…
+              {picking ? 'Opening…' : 'Browse…'}
             </button>
           </div>
         </label>

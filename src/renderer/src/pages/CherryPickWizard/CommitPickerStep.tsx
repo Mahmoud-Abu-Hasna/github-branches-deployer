@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Search } from 'lucide-react'
+import { AlertTriangle, Search } from 'lucide-react'
 import type { CommitInfo, RepoConfig } from '@shared/types'
 
 interface CommitPickerStepProps {
@@ -26,9 +26,11 @@ function CommitPickerStep({
   const [commits, setCommits] = useState<CommitInfo[]>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   async function loadCommits(): Promise<void> {
     setLoading(true)
+    setError(null)
     try {
       setCommits(
         await window.api.git.getLog(repo.id, {
@@ -38,6 +40,8 @@ function CommitPickerStep({
           search: search || undefined
         })
       )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
     } finally {
       setLoading(false)
     }
@@ -96,6 +100,13 @@ function CommitPickerStep({
           </div>
         </label>
       </div>
+
+      {error && (
+        <p className="callout">
+          <AlertTriangle size={14} />
+          {error}
+        </p>
+      )}
 
       {loading && (
         <div className="stack">

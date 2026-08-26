@@ -32,8 +32,12 @@ function ConflictResolutionStep({
 
   async function loadVersions(path: string): Promise<void> {
     if (versions[path]) return
-    const v = await window.api.git.getFileVersions(repo.id, path)
-    setVersions((prev) => ({ ...prev, [path]: v }))
+    try {
+      const v = await window.api.git.getFileVersions(repo.id, path)
+      setVersions((prev) => ({ ...prev, [path]: v }))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    }
   }
 
   function toggleExpand(path: string): void {
@@ -56,7 +60,11 @@ function ConflictResolutionStep({
   }
 
   async function handleOpenInEditor(path: string): Promise<void> {
-    await window.api.git.openInExternalEditor(repo.id, path)
+    try {
+      await window.api.git.openInExternalEditor(repo.id, path)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    }
   }
 
   const allResolved = files.every((f) => resolved[f.path])
