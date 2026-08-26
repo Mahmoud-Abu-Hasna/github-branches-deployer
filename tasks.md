@@ -43,13 +43,17 @@ stop between tasks.
   dashboard stub → Settings tab saves. Report back anything that looks wrong.
 
 ## Phase 2 — Git Read Operations
-- [ ] 2.1 `gitService.fetch(repo)`.
-- [ ] 2.2 `gitService.isWorkingTreeClean(repo)`.
-- [ ] 2.3 `gitService.listBranches(repo)` with ahead/behind vs base.
-- [ ] 2.4 `gitService.getLog(repo, branch, skip, limit, search)`.
-- [ ] 2.5 Wire `git:fetch` / `git:listBranches` / `git:getLog` / `git:isWorkingTreeClean` IPC + preload.
-- [ ] 2.6 `RepoDashboardPage.tsx` branch table + Fetch button.
-- [ ] 2.7 Manual test against a small real local repo (not sahel).
+- [x] 2.1 `gitService.fetch(repo)`.
+- [x] 2.2 `gitService.isWorkingTreeClean(repo)`.
+- [x] 2.3 `gitService.listBranches(repo)` with ahead/behind vs base.
+- [x] 2.4 `gitService.getLog(repo, branch, skip, limit, search)`.
+- [x] 2.5 Wire `git:fetch` / `git:listBranches` / `git:getLog` / `git:isWorkingTreeClean` IPC + preload.
+- [x] 2.6 `RepoDashboardPage.tsx` branch table + Fetch button.
+- [x] 2.7 Manual test — verified the exact raw git commands used by `gitService`
+      (`branch -a -v`, `log --pretty=format:...`, `rev-list --left-right --count`)
+      directly against this app's own real repo (not sahel), including a temp
+      branch to confirm ahead/behind math is correct. Full UI click-through still
+      needs your machine (see Phase 0 note on the Electron binary download).
 
 ## Phase 3 — Branch Creation
 - [ ] 3.1 `gitService.createBranch(repo, name, fromBranch, push)` with pre-flight checks + ref-name validation.

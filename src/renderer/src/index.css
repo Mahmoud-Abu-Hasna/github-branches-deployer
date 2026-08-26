@@ -111,3 +111,16 @@ body {
   color: #c00;
   font-size: 0.9em;
 }
+
+.branch-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+
+.branch-table th,
+.branch-table td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid #8884;
+}

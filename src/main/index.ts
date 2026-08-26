@@ -2,6 +2,7 @@ import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerRepoHandlers } from '@main/ipc/repos'
+import { registerGitHandlers } from '@main/ipc/git'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -41,6 +42,7 @@ app.whenReady().then(() => {
   })
 
   registerRepoHandlers()
+  registerGitHandlers()
 
   createWindow()
 
