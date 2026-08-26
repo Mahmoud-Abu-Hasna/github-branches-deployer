@@ -47,9 +47,20 @@ the user. Fixed by:
   dismissible toast, instead of ever failing silently again — this was Phase
   9.3 ("global error boundary + toast system"), pulled forward because this
   bug made clear it couldn't wait.
-- Still don't know the *original* root cause of the dialog not opening (never
-  saw the actual error text) — next time it happens, the app will now show it
-  instead of doing nothing, which should make it diagnosable in one round.
+- Root cause found from the follow-up error text ("Cannot read properties of
+  undefined (reading 'repos')" — i.e. `window.api` itself was `undefined`):
+  the preload script was built as an **ES module** (`out/preload/index.mjs`,
+  electron-vite's default whenever `package.json` has `"type": "module"` and
+  the installed Electron version is new enough). Electron's **sandboxed**
+  preload scripts (`sandbox: true`, set in `src/main/index.ts`) do not
+  reliably execute an ESM preload — `contextBridge.exposeInMainWorld` never
+  ran, so `window.api` was never created and every IPC call crashed on
+  `window.api.repos`. Fixed by forcing the preload build to CommonJS output
+  (`electron.vite.config.ts` → `preload.build.rollupOptions.output.format:
+  'cjs'`, which changes the output file to `out/preload/index.cjs`) and
+  updating the loaded path in `src/main/index.ts` to match. CJS is the
+  traditional, universally-supported preload format regardless of sandbox
+  settings or Electron version.
 
 ## Phase 0 — Project Setup
 - [x] 0.1 Scaffold with electron-vite `react-ts` template (hand-scaffolded — the

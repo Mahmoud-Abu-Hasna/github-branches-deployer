@@ -14,6 +14,16 @@ export default defineConfig({
   },
   preload: {
     plugins: [externalizeDepsPlugin()],
+    // Electron's sandboxed preload scripts (sandbox: true, set in
+    // src/main/index.ts) do not reliably run an ESM preload — force CJS
+    // output so contextBridge.exposeInMainWorld actually executes.
+    build: {
+      rollupOptions: {
+        output: {
+          format: 'cjs'
+        }
+      }
+    },
     resolve: {
       alias: {
         '@shared': resolve('src/shared')
