@@ -107,12 +107,17 @@ stop between tasks.
      branch's push was silently skipped. Fixed to gate only on `!result.error`.
 
 ## Phase 6 — Cherry-Pick Wizard UI (clean path)
-- [ ] 6.1 `CommitPickerStep.tsx` (source branch, checkboxes, select-all, search).
-- [ ] 6.2 `TargetBranchPickerStep.tsx` (checkboxes, select-all).
-- [ ] 6.3 Wizard state (zustand) + Next/Back nav.
-- [ ] 6.4 `RunProgressStep.tsx` (live progress from events).
-- [ ] 6.5 `SummaryStep.tsx` (final per-branch results).
-- [ ] 6.6 Manual E2E test of full wizard, clean path.
+- [x] 6.1 `CommitPickerStep.tsx` (source branch, debounced-search commit list with checkboxes + select-all).
+- [x] 6.2 `TargetBranchPickerStep.tsx` (checkboxes, select-all, excludes source branch).
+- [x] 6.3 Wizard state + Next/Back nav — **plain `useState` in `CherryPickWizard.tsx`
+      instead of zustand.** The wizard is a single linear flow with no state
+      shared outside its own component tree, so a global store added nothing;
+      removed the unused `zustand` dependency from package.json.
+- [x] 6.4 `RunProgressStep.tsx` (live progress from `events.onCherryPickProgress`, text log).
+- [x] 6.5 `SummaryStep.tsx` (final per-branch results table).
+- [ ] 6.6 Manual E2E test of full wizard, clean path — **not yet done** (needs
+      the Electron window; see Phase 0 note). Ready for you to try once
+      `npm run dev` works on your machine.
 
 ## Phase 7 — Conflict Detection & Resolution (service layer)
 **Implemented alongside Phase 5**, not as a separate later pass — the run loop
@@ -130,12 +135,16 @@ throwaway clean-only loop and rewrite it here.
 - [x] 7.9 Unit tests: resolve-ours path (found bug #1 above), abort path — all passing.
 
 ## Phase 8 — Conflict Resolution UI
-- [ ] 8.1 `ConflictResolutionStep.tsx` shell (conflicted file list).
-- [ ] 8.2 Two-pane read-only Ours/Theirs viewer per file.
-- [ ] 8.3 Per-file Ours/Theirs radio + external-editor / mark-resolved fallback.
-- [ ] 8.4 Continue/Abort controls (Continue enabled only once all files resolved).
-- [ ] 8.5 Wire into RunProgressStep flow (inline on `conflict` event).
-- [ ] 8.6 Manual E2E test of conflict scenario through the UI.
+- [x] 8.1 `ConflictResolutionStep.tsx` shell (conflicted file list, expand/collapse per file).
+- [x] 8.2 Two-pane read-only Ours/Theirs viewer per file (fetched via `getFileVersions`, lazy-loaded on expand).
+- [x] 8.3 Per-file Keep Ours / Keep Theirs buttons + Open in Editor / Mark Resolved Manually fallback (buttons instead of the originally-sketched radio group — clearer as one-click actions since choosing applies immediately rather than needing a separate submit).
+- [x] 8.4 Continue/Abort controls (Continue disabled until every conflicted file is resolved).
+- [x] 8.5 Wired into `RunProgressStep`: renders `ConflictResolutionStep` in place of the log view whenever a `conflict` progress event arrives.
+- [ ] 8.6 Manual E2E test of conflict scenario through the UI — **not yet done**,
+      same Electron-window limitation as 6.6. The underlying engine's conflict
+      path is thoroughly covered by the Phase 5/7 unit tests (resolve-ours,
+      resolve-theirs, abort all pass against a real git conflict), so the risk
+      here is UI wiring only, not git logic.
 
 ## Phase 9 — Polish & Safety
 - [ ] 9.1 Clean-tree guard UI messaging before New Branch / Cherry-Pick.

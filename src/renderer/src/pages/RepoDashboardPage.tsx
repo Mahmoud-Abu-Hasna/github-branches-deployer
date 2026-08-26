@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { BranchInfo, RepoConfig } from '@shared/types'
 import NewBranchDialog from './NewBranchDialog'
+import CherryPickWizard from './CherryPickWizard/CherryPickWizard'
 
 interface RepoDashboardPageProps {
   repo: RepoConfig
@@ -13,6 +14,7 @@ function RepoDashboardPage({ repo, onBack }: RepoDashboardPageProps): React.JSX.
   const [fetching, setFetching] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showNewBranch, setShowNewBranch] = useState(false)
+  const [showCherryPick, setShowCherryPick] = useState(false)
 
   useEffect(() => {
     void loadBranches()
@@ -62,6 +64,9 @@ function RepoDashboardPage({ repo, onBack }: RepoDashboardPageProps): React.JSX.
         <button type="button" onClick={() => setShowNewBranch(true)}>
           New Branch
         </button>
+        <button type="button" onClick={() => setShowCherryPick(true)}>
+          Cherry-Pick
+        </button>
       </div>
 
       {error && <p className="error">{error}</p>}
@@ -90,16 +95,22 @@ function RepoDashboardPage({ repo, onBack }: RepoDashboardPageProps): React.JSX.
         </table>
       )}
 
-      <p className="muted" style={{ marginTop: 16 }}>
-        Cherry-Pick arrives in Phase 6.
-      </p>
-
       {showNewBranch && (
         <NewBranchDialog
           repo={repo}
           onClose={() => setShowNewBranch(false)}
           onCreated={() => {
             setShowNewBranch(false)
+            void loadBranches()
+          }}
+        />
+      )}
+
+      {showCherryPick && (
+        <CherryPickWizard
+          repo={repo}
+          onClose={() => {
+            setShowCherryPick(false)
             void loadBranches()
           }}
         />

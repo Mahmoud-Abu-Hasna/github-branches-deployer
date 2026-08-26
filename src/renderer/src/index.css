@@ -124,3 +124,91 @@ body {
   padding: 6px 8px;
   border-bottom: 1px solid #8884;
 }
+
+.wizard-dialog {
+  width: 640px;
+  max-width: 90vw;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.commit-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid #8884;
+  border-radius: 6px;
+}
+
+.commit-row {
+  padding: 6px 10px;
+  border-bottom: 1px solid #8882;
+  font-size: 0.9em;
+}
+
+.commit-row:last-child {
+  border-bottom: none;
+}
+
+.commit-row label {
+  cursor: pointer;
+}
+
+.commit-sha {
+  font-family: monospace;
+  opacity: 0.6;
+}
+
+.commit-message {
+  flex: 1;
+}
+
+.run-log {
+  background: #0002;
+  border-radius: 6px;
+  padding: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+  font-size: 0.85em;
+  white-space: pre-wrap;
+}
+
+.conflict-file-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.conflict-file {
+  border: 1px solid #8884;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.conflict-file-header {
+  justify-content: space-between;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.conflict-file-body {
+  padding: 0 10px 10px;
+}
+
+.conflict-panes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.conflict-pane {
+  background: #0002;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 0.8em;
+  max-height: 200px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
