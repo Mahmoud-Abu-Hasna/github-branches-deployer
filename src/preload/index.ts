@@ -24,7 +24,11 @@ const api = {
     getLog: (
       repoId: string,
       opts: { branch: string; skip: number; limit: number; search?: string }
-    ): Promise<CommitInfo[]> => ipcRenderer.invoke(IpcChannels.gitGetLog, repoId, opts)
+    ): Promise<CommitInfo[]> => ipcRenderer.invoke(IpcChannels.gitGetLog, repoId, opts),
+    createBranch: (
+      repoId: string,
+      opts: { name: string; fromBranch: string; push: boolean }
+    ): Promise<void> => ipcRenderer.invoke(IpcChannels.gitCreateBranch, repoId, opts)
   }
 }
 

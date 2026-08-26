@@ -24,6 +24,17 @@ export function registerGitHandlers(): void {
   })
 
   ipcMain.handle(
+    IpcChannels.gitCreateBranch,
+    async (
+      _event,
+      repoId: string,
+      opts: { name: string; fromBranch: string; push: boolean }
+    ) => {
+      await gitService.createBranch(requireRepo(repoId), opts)
+    }
+  )
+
+  ipcMain.handle(
     IpcChannels.gitGetLog,
     async (
       _event,

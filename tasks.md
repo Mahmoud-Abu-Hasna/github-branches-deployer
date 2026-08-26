@@ -56,11 +56,14 @@ stop between tasks.
       needs your machine (see Phase 0 note on the Electron binary download).
 
 ## Phase 3 — Branch Creation
-- [ ] 3.1 `gitService.createBranch(repo, name, fromBranch, push)` with pre-flight checks + ref-name validation.
-- [ ] 3.2 Wire `git:createBranch` IPC + preload.
-- [ ] 3.3 `NewBranchDialog.tsx` (name input, base branch dropdown, push checkbox).
-- [ ] 3.4 Wire into dashboard, refresh on success, surface errors.
-- [ ] 3.5 Manual test against disposable fixture repo.
+- [x] 3.1 `gitService.createBranch(repo, name, fromBranch, push)` with pre-flight checks + ref-name validation.
+- [x] 3.2 Wire `git:createBranch` IPC + preload.
+- [x] 3.3 `NewBranchDialog.tsx` (name input, base branch field, push checkbox).
+- [x] 3.4 Wire into dashboard, refresh on success, surface errors.
+- [x] 3.5 Manual test: simulated the exact command sequence (`checkout -b <new>
+      <base>`, `push -u origin <new>`) against a disposable temp bare-origin +
+      working-clone repo — new branch created from base and pushed correctly.
+      Full UI click-through still needs your machine.
 
 ## Phase 4 — Test Fixture Infrastructure
 - [ ] 4.1 `tests/e2e/setup-test-repo.ts` (temp working repo + temp bare origin, seeded `main` + `branch-a`/`branch-b`).

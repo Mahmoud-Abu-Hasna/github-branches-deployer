@@ -62,6 +62,45 @@ export async function listBranches(repo: RepoConfig): Promise<BranchInfo[]> {
   return branches.sort((a, b) => a.name.localeCompare(b.name))
 }
 
+// eslint-disable-next-line no-control-regex -- excludes control chars, which git ref names disallow
+const VALID_REF_NAME = /^(?!\/|.*\/\/|.*\.\.|.*[\s~^:?*[\\]|.*\.lock$|.*\/$)[^\x00-\x1f]+$/
+
+export function isValidBranchName(name: string): boolean {
+  return name.length > 0 && !name.startsWith('-') && VALID_REF_NAME.test(name)
+}
+
+export interface CreateBranchOptions {
+  name: string
+  fromBranch: string
+  push: boolean
+}
+
+export async function createBranch(repo: RepoConfig, opts: CreateBranchOptions): Promise<void> {
+  if (!isValidBranchName(opts.name)) {
+    throw new Error(`"${opts.name}" is not a valid git branch name.`)
+  }
+  if (!(await isWorkingTreeClean(repo))) {
+    throw new Error('Working tree has uncommitted changes. Commit or stash them first.')
+  }
+
+  const g = git(repo)
+  const local = await g.branchLocal()
+  if (local.all.includes(opts.name)) {
+    throw new Error(`Branch "${opts.name}" already exists locally.`)
+  }
+
+  const remotes = await g.branch(['-r', '--no-color'])
+  const startPoint = remotes.all.includes(`origin/${opts.fromBranch}`)
+    ? `origin/${opts.fromBranch}`
+    : opts.fromBranch
+
+  await g.checkoutBranch(opts.name, startPoint)
+
+  if (opts.push) {
+    await g.push(['-u', 'origin', opts.name])
+  }
+}
+
 export async function getLog(
   repo: RepoConfig,
   branch: string,
