@@ -69,20 +69,25 @@ function RunProgressStep({
   }
 
   useEffect(() => {
-    if (started.current) return
-    started.current = true
-
+    // The progress subscription must be (re-)attached on every effect run —
+    // React StrictMode's dev-mode mount/cleanup/mount-again cycle would
+    // otherwise leave it unsubscribed after the first cleanup, since the
+    // second invocation only ever ran the guarded block below. Only the
+    // actual IPC call to start the run is guarded to fire once.
     const unsubscribe = window.api.events.onCherryPickProgress(handleEvent)
 
-    window.api.git
-      .startCherryPickRun(repo.id, { commitShas, targetBranches })
-      .then(({ runId }) => {
-        runIdRef.current = runId
-      })
-      .catch((err: unknown) => {
-        pushLine('error', `Failed to start: ${messageOf(err)}`)
-        showError(messageOf(err))
-      })
+    if (!started.current) {
+      started.current = true
+      window.api.git
+        .startCherryPickRun(repo.id, { commitShas, targetBranches })
+        .then(({ runId }) => {
+          runIdRef.current = runId
+        })
+        .catch((err: unknown) => {
+          pushLine('error', `Failed to start: ${messageOf(err)}`)
+          showError(messageOf(err))
+        })
+    }
 
     return unsubscribe
     // eslint-disable-next-line react-hooks/exhaustive-deps

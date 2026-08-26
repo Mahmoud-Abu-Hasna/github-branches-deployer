@@ -185,6 +185,17 @@ itself, confirmed by inspecting the built `out/preload/index.cjs`.
       shared outside its own component tree, so a global store added nothing;
       removed the unused `zustand` dependency from package.json.
 - [x] 6.4 `RunProgressStep.tsx` (live progress from `events.onCherryPickProgress`, text log).
+      **Fix (post-first-real-test):** in dev mode (React `StrictMode`), the
+      effect subscribing to progress events was gated behind the same
+      `started` ref used to guard the one-time `startCherryPickRun` IPC call.
+      StrictMode's dev-only mount→cleanup→mount-again cycle unsubscribed the
+      listener on the first cleanup, then the second effect invocation hit
+      the `started.current` guard and returned before ever resubscribing —
+      so the cherry-pick genuinely ran on the backend (git operations really
+      happened) but the renderer never received another event again: stuck
+      showing "Running…" forever, no conflict ever surfaced. Fixed by always
+      (re-)subscribing on every effect invocation and only guarding the
+      actual `startCherryPickRun` call with the ref.
 - [x] 6.5 `SummaryStep.tsx` (final per-branch results table).
 - [ ] 6.6 Manual E2E test of full wizard, clean path — **not yet done** (needs
       the Electron window; see Phase 0 note). Ready for you to try once
