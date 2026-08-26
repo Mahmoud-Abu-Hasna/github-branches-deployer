@@ -62,6 +62,20 @@ the user. Fixed by:
   traditional, universally-supported preload format regardless of sandbox
   settings or Electron version.
 
+**That CJS fix wasn't the whole story.** Same error persisted. Added
+diagnostics (preload path/exists check, `webContents` `preload-error`
+listener, renderer-console forwarding to the main terminal) and got the real
+error: `Error: module not found: @electron-toolkit/preload`. **Sandboxed
+Electron preload scripts (`sandbox: true`) can only `require()` Node builtins
+and Electron's own API — not arbitrary third-party npm packages** — so
+`@electron-toolkit/preload` (only used for the unused `window.electron`
+scaffold leftover, never referenced anywhere in this app's own code) crashed
+the whole preload script before it ever reached `contextBridge.exposeInMainWorld`.
+Fixed by removing it entirely: dropped the import/usage from
+`src/preload/index.ts` and `index.d.ts`, and removed the now-unused dependency
+from `package.json`. The preload bundle now only `require()`s `"electron"`
+itself, confirmed by inspecting the built `out/preload/index.cjs`.
+
 ## Phase 0 — Project Setup
 - [x] 0.1 Scaffold with electron-vite `react-ts` template (hand-scaffolded — the
       `create-electron` CLI needs an interactive prompt this environment can't

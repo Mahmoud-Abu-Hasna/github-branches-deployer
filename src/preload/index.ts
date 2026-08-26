@@ -1,5 +1,4 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { electronAPI } from '@electron-toolkit/preload'
 import { IpcChannels } from '@shared/ipcChannels'
 import type {
   AddRepoInput,
@@ -75,7 +74,6 @@ const api = {
 
 // This app always creates its BrowserWindow with contextIsolation: true.
 try {
-  contextBridge.exposeInMainWorld('electron', electronAPI)
   contextBridge.exposeInMainWorld('api', api)
   console.log('[preload] window.api exposed successfully')
 } catch (error) {
