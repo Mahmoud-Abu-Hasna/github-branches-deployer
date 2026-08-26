@@ -29,6 +29,7 @@ export async function setupTestRepo(): Promise<TestRepoFixture> {
   await git.init(false)
   await git.addConfig('user.email', 'fixture@example.com')
   await git.addConfig('user.name', 'Fixture')
+  await git.addConfig('core.autocrlf', 'false')
   await git.addRemote('origin', originDir)
 
   writeFileSync(join(workDir, 'shared.txt'), 'line1\n')

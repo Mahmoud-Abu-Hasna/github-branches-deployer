@@ -80,12 +80,31 @@ stop between tasks.
       double-checkout of an already-created branch).
 
 ## Phase 5 — Cherry-Pick Core (clean path)
-- [ ] 5.1 `startCherryPickRun` skeleton (chronological sort, in-memory run state keyed by `runId`).
-- [ ] 5.2 Sequential clean-path loop: checkout, pull `--ff-only`, cherry-pick `--no-edit` per commit, push, progress events.
-- [ ] 5.3 Progress event channel (main → renderer) + preload subscribe wrapper.
-- [ ] 5.4 `git:startCherryPickRun` invoke handler.
-- [ ] 5.5 Unit test: clean 1-commit/1-branch cherry-pick.
-- [ ] 5.6 Unit test: multi-commit/multi-branch sequential run.
+- [x] 5.1 `startCherryPickRun` skeleton (chronological sort via `sortShasChronologically`, in-memory run state keyed by `runId`, in `cherryPickRunner.ts`).
+- [x] 5.2 Sequential clean-path loop: checkout, pull `--ff-only`, cherry-pick `--no-edit` per commit, push, progress events.
+      **Design note:** built the loop conflict-aware from the start (pause on
+      conflict, resumable state) since Phase 7 needed to hook into the same
+      loop anyway — see the Phase 7 note below for what got pulled forward.
+- [x] 5.3 Progress event channel (main → renderer via `webContents.send`) + preload `events.onCherryPickProgress` subscribe/unsubscribe wrapper.
+- [x] 5.4 `git:startCherryPickRun` invoke handler.
+- [x] 5.5 Unit test: clean 1-commit/1-branch cherry-pick (verifies applied + pushed + file content).
+- [x] 5.6 Unit test: multi-commit/multi-branch sequential run (verifies chronological ordering is enforced regardless of selection order).
+
+  **3 real bugs found and fixed while testing against the fixture repo (not
+  hypothetical — each reproduced with a real `git` process):**
+  1. `git cherry-pick --continue` after resolving every conflict as "ours" can
+     leave zero diff vs HEAD; git then refuses `--continue` ("nothing to
+     commit") and wants `--skip` instead — `continueCherryPick` now catches
+     this and falls back to `--skip`, recording the commit as skipped.
+  2. `simple-git` blocks `GIT_EDITOR`/`core.editor` overrides by default as an
+     unsafe-injection guard; fixed by explicitly opting in
+     (`unsafe: { allowUnsafeEditor: true }`) for that one call — and by NOT
+     spreading the full `process.env` into `.env()` (a stray `GIT_ASKPASS` in
+     this dev environment tripped the same guard).
+  3. `finishBranch` was gating the push on `!result.conflicted`, but that flag
+     just means "this branch hit a conflict at some point in the run" for
+     reporting — it stayed `true` after a successful resolution, so a resolved
+     branch's push was silently skipped. Fixed to gate only on `!result.error`.
 
 ## Phase 6 — Cherry-Pick Wizard UI (clean path)
 - [ ] 6.1 `CommitPickerStep.tsx` (source branch, checkboxes, select-all, search).
@@ -96,15 +115,19 @@ stop between tasks.
 - [ ] 6.6 Manual E2E test of full wizard, clean path.
 
 ## Phase 7 — Conflict Detection & Resolution (service layer)
-- [ ] 7.1 `getConflictFiles(repo)` (parse `git status --porcelain=v1` conflict codes).
-- [ ] 7.2 Extend cherry-pick loop: on conflict, emit event and pause run.
-- [ ] 7.3 `getFileVersions(repo, filePath)` via `git show :2:`/`:3:`.
-- [ ] 7.4 `resolveFile(repo, filePath, resolution)` for ours/theirs/manual (+ conflict-marker guardrail for manual).
-- [ ] 7.5 `openInExternalEditor(repo, filePath)`.
-- [ ] 7.6 `continueCherryPick` (`--no-edit`/`GIT_EDITOR=true`) and `abortCherryPick`.
-- [ ] 7.7 Wire all new IPC channels + preload.
-- [ ] 7.8 Unit test: conflict → resolve-ours → continue → verify.
-- [ ] 7.9 Unit tests: resolve-theirs path, abort path.
+**Implemented alongside Phase 5**, not as a separate later pass — the run loop
+needed conflict detection/pause built in from the start (see Phase 5 note), so
+it made more sense to finish the whole engine in one piece than to write a
+throwaway clean-only loop and rewrite it here.
+- [x] 7.1 `getConflictFiles(repo)` (parse `git status --porcelain=v1` conflict codes) — in `gitService.ts`.
+- [x] 7.2 Cherry-pick loop pauses and emits a `conflict` progress event as soon as a cherry-pick fails with conflicted files.
+- [x] 7.3 `getFileVersions(repo, filePath)` via `git show :2:`/`:3:` — in `gitService.ts`.
+- [x] 7.4 `resolveFile(repo, filePath, resolution)` for ours/theirs/manual (+ conflict-marker regex guardrail for manual) — in `cherryPickRunner.ts` (tied to run state, so it lives with the runner rather than gitService).
+- [x] 7.5 `openInExternalEditor(repoId, filePath)` — in the IPC handler directly (uses Electron's `shell`/`spawn`, not appropriate for the Electron-agnostic `gitService`).
+- [x] 7.6 `continueCherryPick(runId)` and `abortCherryPick(runId)` — keyed by `runId` rather than `repoId` (matches the plan's intent, more precise if a repo ever had >1 concurrent run).
+- [x] 7.7 Wired all channels (`git:getConflictFiles`, `git:getFileVersions`, `git:resolveFile`, `git:openInExternalEditor`, `git:continueCherryPick`, `git:abortCherryPick`) + preload.
+- [x] 7.8 Unit test: conflict → resolve-theirs → continue → verify (found bug #3 above via this test).
+- [x] 7.9 Unit tests: resolve-ours path (found bug #1 above), abort path — all passing.
 
 ## Phase 8 — Conflict Resolution UI
 - [ ] 8.1 `ConflictResolutionStep.tsx` shell (conflicted file list).

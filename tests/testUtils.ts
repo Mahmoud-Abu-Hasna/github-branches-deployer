@@ -1,0 +1,45 @@
+import type { RepoConfig, CherryPickProgressEvent } from '@shared/types'
+import type { TestRepoFixture } from './e2e/setup-test-repo'
+
+export function toRepoConfig(fixture: TestRepoFixture, baseBranch = 'main'): RepoConfig {
+  return {
+    id: 'test',
+    name: 'test',
+    localPath: fixture.workDir,
+    remoteUrl: fixture.originDir,
+    baseBranch,
+    addedAt: new Date().toISOString()
+  }
+}
+
+export function createProgressAwaiter(): {
+  events: CherryPickProgressEvent[]
+  onProgress: (event: CherryPickProgressEvent) => void
+  waitFor: (pred: (event: CherryPickProgressEvent) => boolean) => Promise<CherryPickProgressEvent>
+} {
+  const events: CherryPickProgressEvent[] = []
+  const waiters: {
+    pred: (event: CherryPickProgressEvent) => boolean
+    resolve: (event: CherryPickProgressEvent) => void
+  }[] = []
+
+  function onProgress(event: CherryPickProgressEvent): void {
+    events.push(event)
+    for (let i = waiters.length - 1; i >= 0; i--) {
+      if (waiters[i].pred(event)) {
+        waiters[i].resolve(event)
+        waiters.splice(i, 1)
+      }
+    }
+  }
+
+  function waitFor(
+    pred: (event: CherryPickProgressEvent) => boolean
+  ): Promise<CherryPickProgressEvent> {
+    const already = events.find(pred)
+    if (already) return Promise.resolve(already)
+    return new Promise((resolve) => waiters.push({ pred, resolve }))
+  }
+
+  return { events, onProgress, waitFor }
+}

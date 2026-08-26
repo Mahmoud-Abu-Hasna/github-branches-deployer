@@ -1,7 +1,15 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import { IpcChannels } from '@shared/ipcChannels'
-import type { AddRepoInput, AppSettings, BranchInfo, CommitInfo } from '@shared/types'
+import type {
+  AddRepoInput,
+  AppSettings,
+  BranchInfo,
+  CherryPickProgressEvent,
+  CommitInfo,
+  ConflictFileInfo,
+  ConflictResolution
+} from '@shared/types'
 
 const api = {
   repos: {
@@ -28,7 +36,40 @@ const api = {
     createBranch: (
       repoId: string,
       opts: { name: string; fromBranch: string; push: boolean }
-    ): Promise<void> => ipcRenderer.invoke(IpcChannels.gitCreateBranch, repoId, opts)
+    ): Promise<void> => ipcRenderer.invoke(IpcChannels.gitCreateBranch, repoId, opts),
+    startCherryPickRun: (
+      repoId: string,
+      opts: { commitShas: string[]; targetBranches: string[] }
+    ): Promise<{ runId: string }> =>
+      ipcRenderer.invoke(IpcChannels.gitStartCherryPickRun, repoId, opts),
+    getConflictFiles: (repoId: string): Promise<ConflictFileInfo[]> =>
+      ipcRenderer.invoke(IpcChannels.gitGetConflictFiles, repoId),
+    getFileVersions: (
+      repoId: string,
+      filePath: string
+    ): Promise<{ ours: string; theirs: string }> =>
+      ipcRenderer.invoke(IpcChannels.gitGetFileVersions, repoId, filePath),
+    resolveFile: (
+      repoId: string,
+      filePath: string,
+      resolution: ConflictResolution
+    ): Promise<void> => ipcRenderer.invoke(IpcChannels.gitResolveFile, repoId, filePath, resolution),
+    openInExternalEditor: (repoId: string, filePath: string): Promise<void> =>
+      ipcRenderer.invoke(IpcChannels.gitOpenInExternalEditor, repoId, filePath),
+    continueCherryPick: (runId: string): Promise<void> =>
+      ipcRenderer.invoke(IpcChannels.gitContinueCherryPick, runId),
+    abortCherryPick: (runId: string): Promise<void> =>
+      ipcRenderer.invoke(IpcChannels.gitAbortCherryPick, runId),
+    push: (repoId: string, branch: string): Promise<void> =>
+      ipcRenderer.invoke(IpcChannels.gitPush, repoId, branch)
+  },
+  events: {
+    onCherryPickProgress: (cb: (event: CherryPickProgressEvent) => void): (() => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, payload: CherryPickProgressEvent): void =>
+        cb(payload)
+      ipcRenderer.on(IpcChannels.cherryPickProgressEvent, listener)
+      return () => ipcRenderer.removeListener(IpcChannels.cherryPickProgressEvent, listener)
+    }
   }
 }
 

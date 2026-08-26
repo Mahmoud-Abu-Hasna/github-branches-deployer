@@ -1,18 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { setupTestRepo, type TestRepoFixture } from './e2e/setup-test-repo'
+import { toRepoConfig } from './testUtils'
 import * as gitService from '@main/services/gitService'
-import type { RepoConfig } from '@shared/types'
-
-function toRepoConfig(fixture: TestRepoFixture, baseBranch = 'main'): RepoConfig {
-  return {
-    id: 'test',
-    name: 'test',
-    localPath: fixture.workDir,
-    remoteUrl: fixture.originDir,
-    baseBranch,
-    addedAt: new Date().toISOString()
-  }
-}
 
 describe('gitService against the disposable fixture repo', () => {
   let fixture: TestRepoFixture

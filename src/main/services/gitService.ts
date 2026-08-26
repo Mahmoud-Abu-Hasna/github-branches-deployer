@@ -1,7 +1,9 @@
 import { simpleGit, type SimpleGit } from 'simple-git'
-import type { BranchInfo, CommitInfo, RepoConfig } from '@shared/types'
+import type { BranchInfo, CommitInfo, ConflictFileInfo, RepoConfig } from '@shared/types'
 
-function git(repo: RepoConfig): SimpleGit {
+const CONFLICT_STATUS_CODES = new Set(['UU', 'AA', 'DD', 'AU', 'UA', 'DU', 'UD'])
+
+export function git(repo: RepoConfig): SimpleGit {
   return simpleGit(repo.localPath)
 }
 
@@ -99,6 +101,38 @@ export async function createBranch(repo: RepoConfig, opts: CreateBranchOptions):
   if (opts.push) {
     await g.push(['-u', 'origin', opts.name])
   }
+}
+
+export async function getConflictFiles(repo: RepoConfig): Promise<ConflictFileInfo[]> {
+  const raw = await git(repo).raw(['status', '--porcelain=v1'])
+  const files: ConflictFileInfo[] = []
+  for (const line of raw.split('\n')) {
+    if (!line.trim()) continue
+    const status = line.slice(0, 2)
+    if (CONFLICT_STATUS_CODES.has(status)) {
+      files.push({ path: line.slice(3).trim(), status })
+    }
+  }
+  return files
+}
+
+export async function getFileVersions(
+  repo: RepoConfig,
+  filePath: string
+): Promise<{ ours: string; theirs: string }> {
+  const g = git(repo)
+  const [ours, theirs] = await Promise.all([
+    g.show([`:2:${filePath}`]).catch(() => ''),
+    g.show([`:3:${filePath}`]).catch(() => '')
+  ])
+  return { ours, theirs }
+}
+
+/** Returns the given commit SHAs ordered oldest-first, as they'd need to be applied. */
+export async function sortShasChronologically(repo: RepoConfig, shas: string[]): Promise<string[]> {
+  if (shas.length === 0) return []
+  const raw = await git(repo).raw(['log', '--no-walk', '--reverse', '--pretty=format:%H', ...shas])
+  return raw.split('\n').filter(Boolean)
 }
 
 export async function getLog(
