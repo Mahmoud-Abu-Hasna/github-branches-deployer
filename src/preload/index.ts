@@ -1,19 +1,24 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import { IpcChannels } from '@shared/ipcChannels'
+import type { AddRepoInput, AppSettings } from '@shared/types'
 
-// The real `api` surface (repos/git/settings/events) is added in Phase 1+.
-const api = {}
-
-if (process.contextIsolated) {
-  try {
-    contextBridge.exposeInMainWorld('electron', electronAPI)
-    contextBridge.exposeInMainWorld('api', api)
-  } catch (error) {
-    console.error(error)
+const api = {
+  repos: {
+    list: () => ipcRenderer.invoke(IpcChannels.repoList),
+    add: (input: AddRepoInput) => ipcRenderer.invoke(IpcChannels.repoAdd, input),
+    remove: (id: string) => ipcRenderer.invoke(IpcChannels.repoRemove, id),
+    pickLocalFolder: (): Promise<string | null> =>
+      ipcRenderer.invoke(IpcChannels.repoPickLocalFolder)
+  },
+  settings: {
+    get: () => ipcRenderer.invoke(IpcChannels.settingsGet),
+    update: (patch: Partial<AppSettings>) => ipcRenderer.invoke(IpcChannels.settingsUpdate, patch)
   }
-} else {
-  // @ts-expect-error (define in dts)
-  window.electron = electronAPI
-  // @ts-expect-error (define in dts)
-  window.api = api
 }
+
+// This app always creates its BrowserWindow with contextIsolation: true.
+contextBridge.exposeInMainWorld('electron', electronAPI)
+contextBridge.exposeInMainWorld('api', api)
+
+export type Api = typeof api

@@ -1,3 +1,10 @@
+export interface AddRepoInput {
+  name: string
+  localPath: string
+  remoteUrl: string
+  baseBranch: string
+}
+
 export interface RepoConfig {
   id: string
   name: string

@@ -1,6 +1,7 @@
 import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { registerRepoHandlers } from '@main/ipc/repos'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -38,6 +39,8 @@ app.whenReady().then(() => {
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
+
+  registerRepoHandlers()
 
   createWindow()
 

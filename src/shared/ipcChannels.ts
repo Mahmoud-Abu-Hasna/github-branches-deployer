@@ -1,0 +1,22 @@
+export const IpcChannels = {
+  repoList: 'repo:list',
+  repoAdd: 'repo:add',
+  repoRemove: 'repo:remove',
+  repoPickLocalFolder: 'repo:pickLocalFolder',
+  settingsGet: 'settings:get',
+  settingsUpdate: 'settings:update',
+  gitFetch: 'git:fetch',
+  gitIsWorkingTreeClean: 'git:isWorkingTreeClean',
+  gitListBranches: 'git:listBranches',
+  gitGetLog: 'git:getLog',
+  gitCreateBranch: 'git:createBranch',
+  gitStartCherryPickRun: 'git:startCherryPickRun',
+  gitGetConflictFiles: 'git:getConflictFiles',
+  gitGetFileVersions: 'git:getFileVersions',
+  gitResolveFile: 'git:resolveFile',
+  gitOpenInExternalEditor: 'git:openInExternalEditor',
+  gitContinueCherryPick: 'git:continueCherryPick',
+  gitAbortCherryPick: 'git:abortCherryPick',
+  gitPush: 'git:push',
+  cherryPickProgressEvent: 'git:cherryPickProgress'
+} as const

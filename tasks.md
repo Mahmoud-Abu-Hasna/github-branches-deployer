@@ -11,22 +11,36 @@ unchecked box. Each phase ends in a working, testable state, so it's always safe
 stop between tasks.
 
 ## Phase 0 — Project Setup
-- [ ] 0.1 Scaffold with electron-vite `react-ts` template; verify `npm run dev` opens a blank window.
-- [ ] 0.2 `git init` the app's own repo; `.gitignore` (node_modules, out, release, dist); initial commit.
-- [ ] 0.3 ESLint + Prettier + TS strict mode; `npm run lint` / `npm run typecheck` scripts.
-- [ ] 0.4 `src/shared/types.ts` placeholder domain types; path aliases (`@shared/*`, `@main/*`, `@renderer/*`).
-- [ ] 0.5 BrowserWindow security defaults (`contextIsolation`, `nodeIntegration: false`, `sandbox`, CSP meta tag).
-- [ ] 0.6 Install `simple-git`, `electron-store`; smoke-test import from main.
+- [x] 0.1 Scaffold with electron-vite `react-ts` template (hand-scaffolded — the
+      `create-electron` CLI needs an interactive prompt this environment can't
+      answer); `electron-vite build` succeeds for main/preload/renderer.
+      **Not yet verified:** `npm run dev` opening an actual window — the Electron
+      binary download hung with no progress in this sandbox (no proxy/mirror
+      configured, no cache files ever appeared). Run `npm run dev` once on your
+      own machine to confirm the window opens; if it hangs on "Downloading
+      Electron binary" there too, set `ELECTRON_MIRROR`/`ELECTRON_CUSTOM_DIR` or
+      check your network/proxy.
+- [x] 0.2 `git init` the app's own repo; `.gitignore` (node_modules, out, release, dist); initial commit.
+- [x] 0.3 ESLint + Prettier + TS strict mode; `npm run lint` / `npm run typecheck` scripts. (TypeScript pinned to ^5.9.3, not the newer 7.x line — typescript-eslint doesn't support TS7 yet.)
+- [x] 0.4 `src/shared/types.ts` placeholder domain types; path aliases (`@shared/*`, `@main/*`, `@renderer/*`).
+- [x] 0.5 BrowserWindow security defaults (`contextIsolation`, `nodeIntegration: false`, `sandbox`, CSP meta tag).
+- [x] 0.6 Install `simple-git`, `electron-store`; smoke-tested `simple-git` import directly (OK). `electron-store` transitively requires the `electron` package, which only fully resolves once the Electron binary is present — expected, will work on your machine.
 
 ## Phase 1 — Persistence & Repo Management
-- [ ] 1.1 `main/services/repoStore.ts` (typed electron-store wrapper).
-- [ ] 1.2 `repo:list` / `repo:add` / `repo:remove` IPC handlers.
-- [ ] 1.3 `repo:pickLocalFolder` (native dialog, validates `.git` present).
-- [ ] 1.4 Preload `window.api.repos.*` / `window.api.settings.*` + ambient types.
-- [ ] 1.5 `RepoListPage.tsx` (list + empty state).
-- [ ] 1.6 "Add Repo" flow UI (folder picker → name/base-branch form → add).
-- [ ] 1.7 `SettingsPage.tsx` shell (repo removal, external editor field).
-- [ ] 1.8 Basic routing between RepoList / RepoDashboard (stub) / Settings.
+- [x] 1.1 `main/services/repoStore.ts` (typed electron-store wrapper).
+- [x] 1.2 `repo:list` / `repo:add` / `repo:remove` IPC handlers.
+- [x] 1.3 `repo:pickLocalFolder` (native dialog, validates `.git` present).
+- [x] 1.4 Preload `window.api.repos.*` / `window.api.settings.*` + ambient types.
+- [x] 1.5 `RepoListPage.tsx` (list + empty state).
+- [x] 1.6 "Add Repo" flow UI (folder picker → name/base-branch form → add).
+- [x] 1.7 `SettingsPage.tsx` shell (external editor field, cherry-pick strategy). Repo removal lives on RepoListPage instead (natural place next to each repo card).
+- [x] 1.8 Basic routing between RepoList / RepoDashboard (stub) / Settings (plain useState view switch, no router dependency needed yet).
+
+  **Not yet manually verified in a real window** (Electron binary couldn't
+  download in this sandbox — see Phase 0 note). `electron-vite build` +
+  `tsc --noEmit` + `eslint` all pass. Please run `npm run dev` on your machine
+  and click through: Add Repo → pick a folder → appears in list → click into
+  dashboard stub → Settings tab saves. Report back anything that looks wrong.
 
 ## Phase 2 — Git Read Operations
 - [ ] 2.1 `gitService.fetch(repo)`.
