@@ -1,20 +1,34 @@
 import { app, shell, BrowserWindow } from 'electron'
+import { existsSync } from 'fs'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerRepoHandlers } from '@main/ipc/repos'
 import { registerGitHandlers } from '@main/ipc/git'
 
 function createWindow(): void {
+  const preloadPath = join(__dirname, '../preload/index.cjs')
+  console.log('[main] preload path:', preloadPath, '- exists:', existsSync(preloadPath))
+
   const mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     show: false,
     autoHideMenuBar: true,
     webPreferences: {
-      preload: join(__dirname, '../preload/index.cjs'),
+      preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true
+    }
+  })
+
+  mainWindow.webContents.on('preload-error', (_event, preloadFilePath, error) => {
+    console.error('[main] preload script threw an error:', preloadFilePath, error)
+  })
+
+  mainWindow.webContents.on('console-message', (_event, level, message) => {
+    if (level >= 2) {
+      console.log('[renderer console]', message)
     }
   })
 

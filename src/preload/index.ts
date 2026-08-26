@@ -74,7 +74,12 @@ const api = {
 }
 
 // This app always creates its BrowserWindow with contextIsolation: true.
-contextBridge.exposeInMainWorld('electron', electronAPI)
-contextBridge.exposeInMainWorld('api', api)
+try {
+  contextBridge.exposeInMainWorld('electron', electronAPI)
+  contextBridge.exposeInMainWorld('api', api)
+  console.log('[preload] window.api exposed successfully')
+} catch (error) {
+  console.error('[preload] failed to expose window.api:', error)
+}
 
 export type Api = typeof api
