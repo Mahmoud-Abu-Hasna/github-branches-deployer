@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Check } from 'lucide-react'
 import type { AppSettings } from '@shared/types'
 
 function SettingsPage(): React.JSX.Element {
@@ -17,45 +18,69 @@ function SettingsPage(): React.JSX.Element {
     setTimeout(() => setSaved(false), 1500)
   }
 
-  if (!settings) return <p>Loading…</p>
+  if (!settings) {
+    return (
+      <div className="page">
+        <div className="skeleton-row" style={{ height: 24, width: 120 }} />
+        <div className="skeleton-row" />
+        <div className="skeleton-row" />
+      </div>
+    )
+  }
 
   return (
-    <section>
-      <h1>Settings</h1>
+    <div className="page" style={{ maxWidth: 520 }}>
+      <div className="page-header">
+        <div>
+          <h1>Settings</h1>
+          <p className="subtitle">Preferences that apply across all managed repos.</p>
+        </div>
+      </div>
 
-      <label>
-        External editor command (optional)
-        <input
-          type="text"
-          placeholder="e.g. code"
-          value={settings.externalEditorCommand ?? ''}
-          onChange={(e) =>
-            setSettings({ ...settings, externalEditorCommand: e.target.value })
-          }
-        />
-      </label>
+      <div className="panel stack" style={{ padding: 'var(--space-5)' }}>
+        <label>
+          External editor command
+          <input
+            type="text"
+            placeholder="e.g. code"
+            value={settings.externalEditorCommand ?? ''}
+            onChange={(e) => setSettings({ ...settings, externalEditorCommand: e.target.value })}
+          />
+          <span className="field-hint">
+            Used by "Open in Editor" during conflict resolution. Leave blank to use your OS
+            default for the file type.
+          </span>
+        </label>
 
-      <label>
-        Cherry-pick strategy
-        <select
-          value={settings.cherryPickStrategy}
-          onChange={(e) =>
-            setSettings({
-              ...settings,
-              cherryPickStrategy: e.target.value as AppSettings['cherryPickStrategy']
-            })
-          }
-        >
-          <option value="default">Default</option>
-          <option value="-x">-x (record origin commit)</option>
-        </select>
-      </label>
+        <label>
+          Cherry-pick strategy
+          <select
+            value={settings.cherryPickStrategy}
+            onChange={(e) =>
+              setSettings({
+                ...settings,
+                cherryPickStrategy: e.target.value as AppSettings['cherryPickStrategy']
+              })
+            }
+          >
+            <option value="default">Default</option>
+            <option value="-x">-x (record origin commit in message)</option>
+          </select>
+        </label>
 
-      <button type="button" onClick={handleSave}>
-        Save
-      </button>
-      {saved && <span className="muted"> Saved.</span>}
-    </section>
+        <div className="row">
+          <button type="button" className="btn btn-primary" onClick={handleSave}>
+            Save
+          </button>
+          {saved && (
+            <span className="row muted" style={{ color: 'var(--success)' }}>
+              <Check size={14} />
+              Saved
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
 

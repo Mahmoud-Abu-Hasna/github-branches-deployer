@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import type { BranchRunResult, CherryPickProgressEvent, RepoConfig } from '@shared/types'
 import ConflictResolutionStep from './ConflictResolutionStep'
 
@@ -10,6 +11,11 @@ interface RunProgressStepProps {
 }
 
 type ConflictInfo = Extract<CherryPickProgressEvent, { type: 'conflict' }>
+type LogKind = 'info' | 'applied' | 'conflict' | 'error' | 'done'
+interface LogLine {
+  kind: LogKind
+  text: string
+}
 
 function RunProgressStep({
   repo,
@@ -17,40 +23,44 @@ function RunProgressStep({
   targetBranches,
   onComplete
 }: RunProgressStepProps): React.JSX.Element {
-  const [log, setLog] = useState<string[]>([])
+  const [log, setLog] = useState<LogLine[]>([])
   const [conflict, setConflict] = useState<ConflictInfo | null>(null)
   const runIdRef = useRef<string | null>(null)
   const started = useRef(false)
 
+  function pushLine(kind: LogKind, text: string): void {
+    setLog((prev) => [...prev, { kind, text }])
+  }
+
   function handleEvent(event: CherryPickProgressEvent): void {
     switch (event.type) {
       case 'branch-start':
-        setLog((prev) => [...prev, `→ ${event.branch}: starting…`])
+        pushLine('info', `→ ${event.branch}: starting…`)
         break
       case 'commit-start':
-        setLog((prev) => [
-          ...prev,
+        pushLine(
+          'info',
           `  ${event.branch}: applying ${event.sha.slice(0, 7)} (${event.commitIndex + 1}/${event.totalCommits})`
-        ])
+        )
         break
       case 'commit-applied':
-        setLog((prev) => [...prev, `  ${event.branch}: applied ${event.sha.slice(0, 7)}`])
+        pushLine('applied', `  ${event.branch}: applied ${event.sha.slice(0, 7)}`)
         break
       case 'conflict':
-        setLog((prev) => [...prev, `  ${event.branch}: conflict on ${event.sha.slice(0, 7)}`])
+        pushLine('conflict', `  ${event.branch}: conflict on ${event.sha.slice(0, 7)}`)
         setConflict(event)
         break
       case 'branch-done':
-        setLog((prev) => [
-          ...prev,
+        pushLine(
+          'done',
           `✓ ${event.branch}: done (${event.pushed ? 'pushed' : 'not pushed'})`
-        ])
+        )
         break
       case 'error':
-        setLog((prev) => [...prev, `✗ ${event.branch ?? ''}: ${event.message}`])
+        pushLine('error', `✗ ${event.branch ?? ''}: ${event.message}`)
         break
       case 'run-complete':
-        setLog((prev) => [...prev, 'Run complete.'])
+        pushLine('done', 'Run complete.')
         onComplete(event.results)
         break
     }
@@ -82,7 +92,7 @@ function RunProgressStep({
     if (!runIdRef.current) return
     await window.api.git.abortCherryPick(runIdRef.current)
     setConflict(null)
-    setLog((prev) => [...prev, 'Aborted by user.'])
+    pushLine('error', 'Aborted by user.')
   }
 
   if (conflict) {
@@ -99,10 +109,19 @@ function RunProgressStep({
   }
 
   return (
-    <section>
-      <h2>Running Cherry-Pick…</h2>
-      <pre className="run-log">{log.join('\n')}</pre>
-    </section>
+    <div className="stack" style={{ flex: 1, minHeight: 0 }}>
+      <div className="row muted">
+        <Loader2 size={14} className="spin" />
+        Running…
+      </div>
+      <pre className="run-log">
+        {log.map((line, i) => (
+          <div key={i} className={line.kind !== 'info' ? `log-line-${line.kind}` : undefined}>
+            {line.text}
+          </div>
+        ))}
+      </pre>
+    </div>
   )
 }
 

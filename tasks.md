@@ -10,6 +10,24 @@ by phase. Each unchecked task is small and self-contained — pick up at the fir
 unchecked box. Each phase ends in a working, testable state, so it's always safe to
 stop between tasks.
 
+## UI Redesign (unplanned, done after Phase 8)
+The functional UI from Phases 1–8 was plain unstyled native controls. After the
+user tried the app and called it "too bad," ran a full design pass via the
+`impeccable` skill: wrote `PRODUCT.md`, chose a direction (offered a bold
+terminal/bitmap concept vs. the "standing exit" — user picked the restrained
+Linear/GitHub-Desktop/Vercel-register canon), and rebuilt every screen against a
+real design-token system (`src/renderer/src/index.css`) — colors, type scale,
+spacing, radii, shadows, light/dark via `prefers-color-scheme`. Also restructured
+navigation: added a persistent sidebar (repo switcher + settings) instead of a
+flat page stack, and converted the cherry-pick wizard from a modal to a full
+in-page view (multi-step guided flows shouldn't be modals). Added `lucide-react`
+for icons. Wrote `DESIGN.md` recording the resulting system. See `PRODUCT.md` and
+`DESIGN.md` at the project root for the full record.
+**Not verified in a real window** — same Electron-sandbox limitation as
+everywhere else in this file; the mechanical design-slop detector found zero
+issues, and `tsc`/`eslint`/`electron-vite build` all pass, but please look at it
+for real and say if anything reads wrong.
+
 ## Phase 0 — Project Setup
 - [x] 0.1 Scaffold with electron-vite `react-ts` template (hand-scaffolded — the
       `create-electron` CLI needs an interactive prompt this environment can't

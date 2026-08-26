@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { AlertTriangle } from 'lucide-react'
 import type { RepoConfig } from '@shared/types'
 
 interface NewBranchDialogProps {
@@ -39,7 +40,7 @@ function NewBranchDialog({ repo, onClose, onCreated }: NewBranchDialogProps): Re
   return (
     <div className="dialog-backdrop" role="dialog" aria-modal="true">
       <form className="dialog" onSubmit={handleSubmit}>
-        <h2>New Branch (New Copy)</h2>
+        <h2>New client branch</h2>
 
         <label>
           Branch name
@@ -57,18 +58,23 @@ function NewBranchDialog({ repo, onClose, onCreated }: NewBranchDialogProps): Re
           <input type="text" value={fromBranch} onChange={(e) => setFromBranch(e.target.value)} />
         </label>
 
-        <label className="row">
+        <label className="row" style={{ flexDirection: 'row' }}>
           <input type="checkbox" checked={push} onChange={(e) => setPush(e.target.checked)} />
           Push to origin
         </label>
 
-        {error && <p className="error">{error}</p>}
+        {error && (
+          <p className="callout">
+            <AlertTriangle size={14} />
+            {error}
+          </p>
+        )}
 
         <div className="row dialog-actions">
-          <button type="button" onClick={onClose} disabled={submitting}>
+          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={submitting}>
             Cancel
           </button>
-          <button type="submit" disabled={submitting}>
+          <button type="submit" className="btn btn-primary" disabled={submitting}>
             {submitting ? 'Creating…' : 'Create Branch'}
           </button>
         </div>

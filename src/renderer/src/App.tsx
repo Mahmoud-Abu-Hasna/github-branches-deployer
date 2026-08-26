@@ -1,32 +1,68 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { RepoConfig } from '@shared/types'
+import Sidebar from './components/Sidebar'
 import RepoListPage from './pages/RepoListPage'
 import RepoDashboardPage from './pages/RepoDashboardPage'
 import SettingsPage from './pages/SettingsPage'
+import AddRepoDialog from './pages/AddRepoDialog'
 
-type View = { name: 'repos' } | { name: 'dashboard'; repo: RepoConfig } | { name: 'settings' }
+type View = { name: 'home' } | { name: 'dashboard'; repo: RepoConfig } | { name: 'settings' }
 
 function App(): React.JSX.Element {
-  const [view, setView] = useState<View>({ name: 'repos' })
+  const [view, setView] = useState<View>({ name: 'home' })
+  const [repos, setRepos] = useState<RepoConfig[]>([])
+  const [loadingRepos, setLoadingRepos] = useState(true)
+  const [showAddDialog, setShowAddDialog] = useState(false)
+
+  useEffect(() => {
+    void refreshRepos()
+  }, [])
+
+  async function refreshRepos(): Promise<void> {
+    setLoadingRepos(true)
+    setRepos(await window.api.repos.list())
+    setLoadingRepos(false)
+  }
+
+  function openRepo(repo: RepoConfig): void {
+    setView({ name: 'dashboard', repo })
+  }
 
   return (
-    <div className="app">
-      <nav className="row nav-row">
-        <button type="button" onClick={() => setView({ name: 'repos' })}>
-          Repos
-        </button>
-        <button type="button" onClick={() => setView({ name: 'settings' })}>
-          Settings
-        </button>
-      </nav>
+    <div className="app-shell">
+      <Sidebar
+        repos={repos}
+        activeRepoId={view.name === 'dashboard' ? view.repo.id : null}
+        onSelectRepo={openRepo}
+        onAddRepo={() => setShowAddDialog(true)}
+        onOpenHome={() => setView({ name: 'home' })}
+        onOpenSettings={() => setView({ name: 'settings' })}
+        settingsActive={view.name === 'settings'}
+      />
 
-      {view.name === 'repos' && (
-        <RepoListPage onOpenRepo={(repo) => setView({ name: 'dashboard', repo })} />
+      <main className="main-content">
+        {view.name === 'home' && (
+          <RepoListPage
+            repos={repos}
+            loading={loadingRepos}
+            onOpenRepo={openRepo}
+            onReposChanged={refreshRepos}
+            onAddRepoClick={() => setShowAddDialog(true)}
+          />
+        )}
+        {view.name === 'dashboard' && <RepoDashboardPage repo={view.repo} />}
+        {view.name === 'settings' && <SettingsPage />}
+      </main>
+
+      {showAddDialog && (
+        <AddRepoDialog
+          onClose={() => setShowAddDialog(false)}
+          onAdded={() => {
+            setShowAddDialog(false)
+            void refreshRepos()
+          }}
+        />
       )}
-      {view.name === 'dashboard' && (
-        <RepoDashboardPage repo={view.repo} onBack={() => setView({ name: 'repos' })} />
-      )}
-      {view.name === 'settings' && <SettingsPage />}
     </div>
   )
 }

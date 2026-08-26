@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { GitBranch } from 'lucide-react'
 import type { BranchInfo, RepoConfig } from '@shared/types'
 
 interface TargetBranchPickerStepProps {
@@ -50,54 +51,62 @@ function TargetBranchPickerStep({
   }
 
   return (
-    <section>
-      <h2>2. Pick target branches</h2>
-
-      {loading && <p>Loading branches…</p>}
+    <div className="stack" style={{ flex: 1, minHeight: 0 }}>
+      {loading && (
+        <div className="stack">
+          <div className="skeleton-row" style={{ height: 34 }} />
+          <div className="skeleton-row" style={{ height: 34 }} />
+        </div>
+      )}
 
       {!loading && (
         <>
-          <div className="row" style={{ margin: '8px 0' }}>
-            <label className="row">
-              <input
-                type="checkbox"
-                checked={branches.length > 0 && branches.every((b) => selected.has(b.name))}
-                onChange={toggleAll}
-              />
-              Select all ({selected.size} selected)
-            </label>
-          </div>
+          <label className="select-all-row row" style={{ flexDirection: 'row' }}>
+            <input
+              type="checkbox"
+              checked={branches.length > 0 && branches.every((b) => selected.has(b.name))}
+              onChange={toggleAll}
+            />
+            Select all
+            <span className="badge">{selected.size} selected</span>
+          </label>
 
-          <ul className="commit-list">
+          <ul className="commit-list" style={{ flex: 1 }}>
             {branches.map((b) => (
               <li key={b.name} className="commit-row">
                 <label className="row">
-                  <input
-                    type="checkbox"
-                    checked={selected.has(b.name)}
-                    onChange={() => toggle(b.name)}
-                  />
+                  <input type="checkbox" checked={selected.has(b.name)} onChange={() => toggle(b.name)} />
+                  <GitBranch size={13} style={{ color: 'var(--text-tertiary)' }} />
                   <span className="commit-message">{b.name}</span>
-                  <span className="muted">
-                    +{b.ahead} / -{b.behind}
+                  <span className="muted num">
+                    {b.ahead > 0 && `+${b.ahead}`} {b.behind > 0 && `-${b.behind}`}
                   </span>
                 </label>
               </li>
             ))}
+            {branches.length === 0 && (
+              <li className="empty-state">
+                <p>No other local branches found.</p>
+              </li>
+            )}
           </ul>
-          {branches.length === 0 && <p className="empty-state">No other local branches found.</p>}
         </>
       )}
 
       <div className="row dialog-actions">
-        <button type="button" onClick={onBack}>
+        <button type="button" className="btn btn-secondary" onClick={onBack}>
           Back
         </button>
-        <button type="button" onClick={onNext} disabled={selected.size === 0}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={onNext}
+          disabled={selected.size === 0}
+        >
           Start Cherry-Pick
         </button>
       </div>
-    </section>
+    </div>
   )
 }
 

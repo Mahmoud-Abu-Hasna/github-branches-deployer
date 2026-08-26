@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react'
+import { AlertTriangle, GitBranch, GitPullRequestArrow, Plus, RefreshCw } from 'lucide-react'
 import type { BranchInfo, RepoConfig } from '@shared/types'
 import NewBranchDialog from './NewBranchDialog'
 import CherryPickWizard from './CherryPickWizard/CherryPickWizard'
 
 interface RepoDashboardPageProps {
   repo: RepoConfig
-  onBack: () => void
 }
 
-function RepoDashboardPage({ repo, onBack }: RepoDashboardPageProps): React.JSX.Element {
+function RepoDashboardPage({ repo }: RepoDashboardPageProps): React.JSX.Element {
   const [branches, setBranches] = useState<BranchInfo[]>([])
   const [loading, setLoading] = useState(true)
   const [fetching, setFetching] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showNewBranch, setShowNewBranch] = useState(false)
-  const [showCherryPick, setShowCherryPick] = useState(false)
+  const [cherryPicking, setCherryPicking] = useState(false)
 
   useEffect(() => {
     void loadBranches()
@@ -46,53 +46,103 @@ function RepoDashboardPage({ repo, onBack }: RepoDashboardPageProps): React.JSX.
     }
   }
 
+  if (cherryPicking) {
+    return (
+      <div className="page" style={{ maxWidth: 760, height: '100%' }}>
+        <CherryPickWizard
+          repo={repo}
+          onClose={() => {
+            setCherryPicking(false)
+            void loadBranches()
+          }}
+        />
+      </div>
+    )
+  }
+
   return (
-    <section>
-      <div className="row header-row">
-        <h1>{repo.name}</h1>
-        <button type="button" onClick={onBack}>
-          ← Back to Repos
-        </button>
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <h1>{repo.name}</h1>
+          <p className="subtitle mono">{repo.localPath}</p>
+        </div>
+        <div className="toolbar">
+          <button type="button" className="btn btn-secondary" onClick={handleFetch} disabled={fetching}>
+            <RefreshCw size={14} className={fetching ? 'spin' : undefined} />
+            {fetching ? 'Fetching…' : 'Fetch'}
+          </button>
+          <button type="button" className="btn btn-secondary" onClick={() => setShowNewBranch(true)}>
+            <Plus size={14} />
+            New Branch
+          </button>
+          <button type="button" className="btn btn-primary" onClick={() => setCherryPicking(true)}>
+            <GitPullRequestArrow size={14} />
+            Cherry-Pick
+          </button>
+        </div>
       </div>
-      <p className="muted">{repo.localPath}</p>
-      <p className="muted">base branch: {repo.baseBranch}</p>
 
-      <div className="row" style={{ margin: '12px 0' }}>
-        <button type="button" onClick={handleFetch} disabled={fetching}>
-          {fetching ? 'Fetching…' : 'Fetch'}
-        </button>
-        <button type="button" onClick={() => setShowNewBranch(true)}>
-          New Branch
-        </button>
-        <button type="button" onClick={() => setShowCherryPick(true)}>
-          Cherry-Pick
-        </button>
-      </div>
+      {error && (
+        <p className="callout">
+          <AlertTriangle size={14} />
+          {error}
+        </p>
+      )}
 
-      {error && <p className="error">{error}</p>}
-      {loading && <p>Loading branches…</p>}
+      {loading && (
+        <div className="stack">
+          <div className="skeleton-row" />
+          <div className="skeleton-row" />
+          <div className="skeleton-row" />
+        </div>
+      )}
+
+      {!loading && branches.length === 0 && !error && (
+        <div className="empty-state panel">
+          <GitBranch size={32} strokeWidth={1.5} />
+          <h3>No branches found</h3>
+          <p>This repo has no local branches yet, or they haven't loaded. Try Fetch.</p>
+        </div>
+      )}
 
       {!loading && branches.length > 0 && (
-        <table className="branch-table">
-          <thead>
-            <tr>
-              <th>Branch</th>
-              <th>Type</th>
-              <th>Ahead</th>
-              <th>Behind</th>
-            </tr>
-          </thead>
-          <tbody>
-            {branches.map((b) => (
-              <tr key={`${b.isRemote ? 'r' : 'l'}-${b.name}`}>
-                <td>{b.name}</td>
-                <td>{b.isRemote ? 'remote' : 'local'}</td>
-                <td>{b.ahead}</td>
-                <td>{b.behind}</td>
+        <div className="panel" style={{ overflow: 'hidden' }}>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Branch</th>
+                <th>Type</th>
+                <th>Ahead</th>
+                <th>Behind</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {branches.map((b) => (
+                <tr key={`${b.isRemote ? 'r' : 'l'}-${b.name}`}>
+                  <td>
+                    <span className="row">
+                      <GitBranch size={13} style={{ color: 'var(--text-tertiary)' }} />
+                      {b.name === repo.baseBranch ? (
+                        <>
+                          {b.name}
+                          <span className="badge badge-accent">base</span>
+                        </>
+                      ) : (
+                        b.name
+                      )}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="badge">{b.isRemote ? 'remote' : 'local'}</span>
+                  </td>
+                  <td className="num">{b.ahead > 0 ? `+${b.ahead}` : '—'}</td>
+                  <td className="num">{b.behind > 0 ? `-${b.behind}` : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {showNewBranch && (
@@ -105,17 +155,7 @@ function RepoDashboardPage({ repo, onBack }: RepoDashboardPageProps): React.JSX.
           }}
         />
       )}
-
-      {showCherryPick && (
-        <CherryPickWizard
-          repo={repo}
-          onClose={() => {
-            setShowCherryPick(false)
-            void loadBranches()
-          }}
-        />
-      )}
-    </section>
+    </div>
   )
 }
 

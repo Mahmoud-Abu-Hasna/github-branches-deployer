@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { AlertTriangle, FolderOpen } from 'lucide-react'
 import type { RepoConfig } from '@shared/types'
 
 interface AddRepoDialogProps {
@@ -54,8 +55,9 @@ function AddRepoDialog({ onClose, onAdded }: AddRepoDialogProps): React.JSX.Elem
         <label>
           Local folder
           <div className="row">
-            <input type="text" value={localPath} readOnly placeholder="No folder selected" />
-            <button type="button" onClick={handlePickFolder}>
+            <input type="text" value={localPath} readOnly placeholder="No folder selected" style={{ flex: 1 }} />
+            <button type="button" className="btn btn-secondary" onClick={handlePickFolder}>
+              <FolderOpen size={14} />
               Browse…
             </button>
           </div>
@@ -68,20 +70,22 @@ function AddRepoDialog({ onClose, onAdded }: AddRepoDialogProps): React.JSX.Elem
 
         <label>
           Base branch
-          <input
-            type="text"
-            value={baseBranch}
-            onChange={(e) => setBaseBranch(e.target.value)}
-          />
+          <input type="text" value={baseBranch} onChange={(e) => setBaseBranch(e.target.value)} />
+          <span className="field-hint">The shared branch new client branches and cherry-picks come from.</span>
         </label>
 
-        {error && <p className="error">{error}</p>}
+        {error && (
+          <p className="callout">
+            <AlertTriangle size={14} />
+            {error}
+          </p>
+        )}
 
         <div className="row dialog-actions">
-          <button type="button" onClick={onClose} disabled={submitting}>
+          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={submitting}>
             Cancel
           </button>
-          <button type="submit" disabled={submitting}>
+          <button type="submit" className="btn btn-primary" disabled={submitting}>
             {submitting ? 'Adding…' : 'Add Repo'}
           </button>
         </div>
