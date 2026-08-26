@@ -16,6 +16,7 @@
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write .",
     "test": "vitest run",
+    "fixture:up": "tsx tests/e2e/spin-up-fixture.ts",
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "npm run build && electron-builder --mac"
   },
@@ -40,6 +41,7 @@
     "electron-vite": "^5.0.0",
     "eslint": "^9.0.0",
     "prettier": "^3.3.0",
+    "tsx": "^4.23.12",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "typescript": "^5.9.3",

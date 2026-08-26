@@ -66,10 +66,18 @@ stop between tasks.
       Full UI click-through still needs your machine.
 
 ## Phase 4 — Test Fixture Infrastructure
-- [ ] 4.1 `tests/e2e/setup-test-repo.ts` (temp working repo + temp bare origin, seeded `main` + `branch-a`/`branch-b`).
-- [ ] 4.2 Deliberate conflicting-commit scenario helper.
-- [ ] 4.3 Teardown helper + manual-spin-up npm script.
-- [ ] 4.4 Install Vitest; first unit test against the fixture (`getLog`, `listBranches`).
+- [x] 4.1 `tests/e2e/setup-test-repo.ts` (temp working repo + temp bare origin, seeded `main` + `branch-a`/`branch-b`).
+- [x] 4.2 Deliberate conflicting-commit scenario helper (built into setup: a commit
+      on `main` and a commit on `branch-a` both edit the same line of
+      `shared.txt` differently, so cherry-picking main's commit onto branch-a
+      always conflicts).
+- [x] 4.3 Teardown helper (`fixture.cleanup()`) + `npm run fixture:up` manual-spin-up script (via `tsx`).
+- [x] 4.4 Installed Vitest (was already in package.json from Phase 0); wrote and
+      passed 3 unit tests (`vitest.config.ts` + `tests/gitService.test.ts`)
+      against the fixture — `getLog` ordering, `listBranches` ahead/behind math,
+      `isWorkingTreeClean`. Found and fixed two real bugs in the fixture script
+      along the way (workDir created after simple-git needed it to exist;
+      double-checkout of an already-created branch).
 
 ## Phase 5 — Cherry-Pick Core (clean path)
 - [ ] 5.1 `startCherryPickRun` skeleton (chronological sort, in-memory run state keyed by `runId`).
