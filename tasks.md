@@ -174,6 +174,11 @@ itself, confirmed by inspecting the built `out/preload/index.cjs`.
 
 ## Phase 6 — Cherry-Pick Wizard UI (clean path)
 - [x] 6.1 `CommitPickerStep.tsx` (source branch, debounced-search commit list with checkboxes + select-all).
+      **Fix (post-first-real-test):** was hardcoded to a single 30-commit page
+      with no way to see older commits. Added a "Load 30 more" control that
+      appends the next page (`skip: commits.length`) and tracks `hasMore`;
+      "select all" is now explicitly labeled "Select all loaded" since it only
+      ever applies to what's fetched so far.
 - [x] 6.2 `TargetBranchPickerStep.tsx` (checkboxes, select-all, excludes source branch).
 - [x] 6.3 Wizard state + Next/Back nav — **plain `useState` in `CherryPickWizard.tsx`
       instead of zustand.** The wizard is a single linear flow with no state

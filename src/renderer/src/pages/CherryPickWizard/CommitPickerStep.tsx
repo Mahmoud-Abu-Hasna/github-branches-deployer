@@ -26,24 +26,45 @@ function CommitPickerStep({
   const [commits, setCommits] = useState<CommitInfo[]>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   async function loadCommits(): Promise<void> {
     setLoading(true)
     setError(null)
     try {
-      setCommits(
-        await window.api.git.getLog(repo.id, {
-          branch: sourceBranch,
-          skip: 0,
-          limit: PAGE_SIZE,
-          search: search || undefined
-        })
-      )
+      const page = await window.api.git.getLog(repo.id, {
+        branch: sourceBranch,
+        skip: 0,
+        limit: PAGE_SIZE,
+        search: search || undefined
+      })
+      setCommits(page)
+      setHasMore(page.length === PAGE_SIZE)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function loadMore(): Promise<void> {
+    setLoadingMore(true)
+    setError(null)
+    try {
+      const page = await window.api.git.getLog(repo.id, {
+        branch: sourceBranch,
+        skip: commits.length,
+        limit: PAGE_SIZE,
+        search: search || undefined
+      })
+      setCommits((prev) => [...prev, ...page])
+      setHasMore(page.length === PAGE_SIZE)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setLoadingMore(false)
     }
   }
 
@@ -124,8 +145,11 @@ function CommitPickerStep({
               checked={commits.length > 0 && commits.every((c) => selected.has(c.sha))}
               onChange={toggleAll}
             />
-            Select all
+            Select all loaded
             <span className="badge">{selected.size} selected</span>
+            <span className="muted">
+              {commits.length} loaded{hasMore ? '+' : ''}
+            </span>
           </label>
 
           <ul className="commit-list" style={{ flex: 1 }}>
@@ -142,6 +166,19 @@ function CommitPickerStep({
             {commits.length === 0 && (
               <li className="empty-state">
                 <p>No commits found.</p>
+              </li>
+            )}
+            {hasMore && (
+              <li className="commit-row">
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  style={{ width: '100%' }}
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                >
+                  {loadingMore ? 'Loading…' : `Load ${PAGE_SIZE} more`}
+                </button>
               </li>
             )}
           </ul>
