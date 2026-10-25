@@ -948,10 +948,20 @@ input[type='checkbox']:checked::before {
   padding: var(--space-2);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  max-height: 220px;
+  max-height: 420px;
   overflow: auto;
   white-space: pre-wrap;
   margin: 0;
+}
+
+.diff-line-removed {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.diff-line-added {
+  background: var(--success-soft);
+  color: var(--success);
 }
 
 .branch-pill-row {

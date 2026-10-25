@@ -48,6 +48,14 @@ function CherryPickWizard({ repo, onClose }: CherryPickWizardProps): React.JSX.E
   const [selectedBranches, setSelectedBranches] = useState<Set<string>>(new Set())
   const [results, setResults] = useState<BranchRunResult[]>([])
 
+  // Commits are only meaningful relative to the branch they were selected
+  // from — switching source branches without clearing this would silently
+  // carry stale shas from the old branch into the run.
+  function handleSourceBranchChange(branch: string): void {
+    setSourceBranch(branch)
+    setSelectedCommits(new Set())
+  }
+
   return (
     <div className="wizard">
       <div className="page-header">
@@ -62,7 +70,7 @@ function CherryPickWizard({ repo, onClose }: CherryPickWizardProps): React.JSX.E
         <CommitPickerStep
           repo={repo}
           sourceBranch={sourceBranch}
-          onSourceBranchChange={setSourceBranch}
+          onSourceBranchChange={handleSourceBranchChange}
           selected={selectedCommits}
           onSelectedChange={setSelectedCommits}
           onCancel={onClose}

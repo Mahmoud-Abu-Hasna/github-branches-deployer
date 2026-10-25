@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { AlertTriangle, Search } from 'lucide-react'
 import type { CommitInfo, RepoConfig } from '@shared/types'
+import BranchSelect from '../../components/BranchSelect'
+import { formatAbsoluteDateTime, formatRelativeDate } from '../../utils/formatDate'
 
 interface CommitPickerStepProps {
   repo: RepoConfig
@@ -95,14 +97,9 @@ function CommitPickerStep({
   return (
     <div className="stack" style={{ flex: 1, minHeight: 0 }}>
       <div className="row" style={{ gap: 'var(--space-3)', alignItems: 'flex-end' }}>
-        <label style={{ width: 200 }}>
-          Source branch
-          <input
-            type="text"
-            value={sourceBranch}
-            onChange={(e) => onSourceBranchChange(e.target.value)}
-          />
-        </label>
+        <div style={{ width: 220 }}>
+          <BranchSelect repo={repo} label="Source branch" value={sourceBranch} onChange={onSourceBranchChange} />
+        </div>
 
         <label style={{ flex: 1 }}>
           Search
@@ -155,10 +152,21 @@ function CommitPickerStep({
           <ul className="commit-list" style={{ flex: 1 }}>
             {commits.map((c) => (
               <li key={c.sha} className="commit-row">
-                <label className="row">
+                <label
+                  className="row"
+                  title={
+                    c.isMerge
+                      ? "Merge commit — cherry-picked against its first parent (mainline), same as GitHub's cherry-pick."
+                      : undefined
+                  }
+                >
                   <input type="checkbox" checked={selected.has(c.sha)} onChange={() => toggle(c.sha)} />
                   <span className="commit-sha">{c.sha.slice(0, 7)}</span>
                   <span className="commit-message">{c.message}</span>
+                  {c.isMerge && <span className="badge badge-warning">merge</span>}
+                  <span className="muted" title={formatAbsoluteDateTime(c.date)}>
+                    {formatRelativeDate(c.date)}
+                  </span>
                   <span className="muted">{c.authorName}</span>
                 </label>
               </li>

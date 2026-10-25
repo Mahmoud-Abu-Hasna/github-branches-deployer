@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AlertTriangle, Check, ChevronDown, ChevronRight, ExternalLink } from 'lucide-react'
 import type { ConflictFileInfo, ConflictResolution, RepoConfig } from '@shared/types'
+import { diffLines, type DiffLine } from '../../utils/lineDiff'
 
 interface ConflictResolutionStepProps {
   repo: RepoConfig
@@ -9,11 +10,27 @@ interface ConflictResolutionStepProps {
   files: ConflictFileInfo[]
   onContinue: () => void
   onAbort: () => void
+  actionPending: boolean
 }
 
 interface FileVersions {
   ours: string
   theirs: string
+}
+
+function DiffPane({ lines, raw }: { lines: DiffLine[] | null; raw: string | undefined }): React.JSX.Element {
+  if (!lines) {
+    return <pre className="conflict-pane">{raw ?? 'Loading…'}</pre>
+  }
+  return (
+    <pre className="conflict-pane">
+      {lines.map((line, i) => (
+        <div key={i} className={line.kind !== 'same' ? `diff-line-${line.kind}` : undefined}>
+          {line.text.length > 0 ? line.text : ' '}
+        </div>
+      ))}
+    </pre>
+  )
 }
 
 function ConflictResolutionStep({
@@ -22,7 +39,8 @@ function ConflictResolutionStep({
   sha,
   files,
   onContinue,
-  onAbort
+  onAbort,
+  actionPending
 }: ConflictResolutionStepProps): React.JSX.Element {
   const [versions, setVersions] = useState<Record<string, FileVersions>>({})
   const [resolved, setResolved] = useState<Record<string, ConflictResolution>>({})
@@ -40,10 +58,20 @@ function ConflictResolutionStep({
     }
   }
 
+  // Covers both the file auto-expanded on mount (useState's initial value
+  // never triggered a fetch on its own — toggleExpand did, but that only
+  // runs on a click) and every later toggle, from one place. loadVersions's
+  // setState only ever runs after its await, not synchronously in the
+  // effect body, but the lint rule's static check can't see through the
+  // named-function call to know that.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (expanded) void loadVersions(expanded)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expanded])
+
   function toggleExpand(path: string): void {
-    const next = expanded === path ? null : path
-    setExpanded(next)
-    if (next) void loadVersions(next)
+    setExpanded((current) => (current === path ? null : path))
   }
 
   async function applyResolution(path: string, resolution: ConflictResolution): Promise<void> {
@@ -88,7 +116,10 @@ function ConflictResolutionStep({
       )}
 
       <ul className="conflict-file-list">
-        {files.map((f) => (
+        {files.map((f) => {
+          const v = versions[f.path]
+          const diff = v ? diffLines(v.ours, v.theirs) : null
+          return (
           <li key={f.path} className="conflict-file">
             <div className="row conflict-file-header" onClick={() => toggleExpand(f.path)}>
               {expanded === f.path ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -110,11 +141,11 @@ function ConflictResolutionStep({
                 <div className="conflict-panes">
                   <div>
                     <p className="conflict-pane-label">Ours · {branch}</p>
-                    <pre className="conflict-pane">{versions[f.path]?.ours ?? 'Loading…'}</pre>
+                    <DiffPane lines={v ? diff?.ours ?? null : null} raw={v?.ours} />
                   </div>
                   <div>
                     <p className="conflict-pane-label">Theirs · incoming commit</p>
-                    <pre className="conflict-pane">{versions[f.path]?.theirs ?? 'Loading…'}</pre>
+                    <DiffPane lines={v ? diff?.theirs ?? null : null} raw={v?.theirs} />
                   </div>
                 </div>
 
@@ -156,18 +187,24 @@ function ConflictResolutionStep({
               </div>
             )}
           </li>
-        ))}
+          )
+        })}
       </ul>
 
       <div className="row dialog-actions">
-        <button type="button" className="btn btn-danger" onClick={onAbort} disabled={busy}>
+        <button
+          type="button"
+          className="btn btn-danger"
+          onClick={onAbort}
+          disabled={busy || actionPending}
+        >
           Abort Run
         </button>
         <button
           type="button"
           className="btn btn-primary"
           onClick={onContinue}
-          disabled={!allResolved || busy}
+          disabled={!allResolved || busy || actionPending}
         >
           Continue Cherry-Pick
         </button>

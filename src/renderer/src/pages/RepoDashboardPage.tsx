@@ -3,6 +3,7 @@ import { AlertTriangle, GitBranch, GitPullRequestArrow, Plus, RefreshCw } from '
 import type { BranchInfo, RepoConfig } from '@shared/types'
 import NewBranchDialog from './NewBranchDialog'
 import CherryPickWizard from './CherryPickWizard/CherryPickWizard'
+import { formatAbsoluteDateTime, formatRelativeDate } from '../utils/formatDate'
 
 interface RepoDashboardPageProps {
   repo: RepoConfig
@@ -48,7 +49,10 @@ function RepoDashboardPage({ repo }: RepoDashboardPageProps): React.JSX.Element 
 
   if (cherryPicking) {
     return (
-      <div className="page" style={{ maxWidth: 760, height: '100%' }}>
+      // Override .page's 860px reading-width cap (fine for text-heavy pages,
+      // but the Run/conflict steps show real diffs and a live log, which
+      // need the window's actual width, not a narrow text column).
+      <div className="page" style={{ maxWidth: 'none', height: '100%' }}>
         <CherryPickWizard
           repo={repo}
           onClose={() => {
@@ -115,6 +119,7 @@ function RepoDashboardPage({ repo }: RepoDashboardPageProps): React.JSX.Element 
                 <th>Type</th>
                 <th>Ahead</th>
                 <th>Behind</th>
+                <th>Updated</th>
               </tr>
             </thead>
             <tbody>
@@ -138,6 +143,9 @@ function RepoDashboardPage({ repo }: RepoDashboardPageProps): React.JSX.Element 
                   </td>
                   <td className="num">{b.ahead > 0 ? `+${b.ahead}` : '—'}</td>
                   <td className="num">{b.behind > 0 ? `-${b.behind}` : '—'}</td>
+                  <td className="muted" title={formatAbsoluteDateTime(b.lastCommitDate)}>
+                    {formatRelativeDate(b.lastCommitDate)}
+                  </td>
                 </tr>
               ))}
             </tbody>

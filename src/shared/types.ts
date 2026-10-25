@@ -34,6 +34,8 @@ export interface CommitInfo {
   authorName: string
   date: string
   message: string
+  /** Merge commits can't be cherry-picked without choosing a parent (`-m`); not offered for selection. */
+  isMerge: boolean
 }
 
 export interface ConflictFileInfo {

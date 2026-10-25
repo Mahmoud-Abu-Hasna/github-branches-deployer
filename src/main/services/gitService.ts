@@ -31,9 +31,33 @@ async function aheadBehind(repo: RepoConfig, branch: string, baseBranch: string)
   }
 }
 
+/** refname (short, remote-prefix stripped like listBranches' own shortName) -> ISO commit date, in one call instead of one `git log` per branch. */
+async function getLastCommitDates(repo: RepoConfig): Promise<Map<string, string>> {
+  const raw = await git(repo).raw([
+    'for-each-ref',
+    '--format=%(refname)%09%(committerdate:iso-strict)',
+    'refs/heads',
+    'refs/remotes'
+  ])
+  const dates = new Map<string, string>()
+  for (const line of raw.split('\n')) {
+    const [refname, date] = line.split('\t')
+    if (!refname || !date) continue
+    const isLocal = refname.startsWith('refs/heads/')
+    const shortName = refname.replace(/^refs\/heads\//, '').replace(/^refs\/remotes\/[^/]+\//, '')
+    // A local branch's date wins over a same-named remote's, matching
+    // listBranches' own dedup-by-shortName (local entries are kept there).
+    if (isLocal || !dates.has(shortName)) dates.set(shortName, date)
+  }
+  return dates
+}
+
 export async function listBranches(repo: RepoConfig): Promise<BranchInfo[]> {
   const g = git(repo)
-  const summary = await g.branch(['-a', '-v', '--no-color'])
+  const [summary, lastCommitDates] = await Promise.all([
+    g.branch(['-a', '-v', '--no-color']),
+    getLastCommitDates(repo)
+  ])
   const baseBranch = repo.baseBranch
 
   const seen = new Set<string>()
@@ -56,7 +80,7 @@ export async function listBranches(repo: RepoConfig): Promise<BranchInfo[]> {
       isRemote,
       ahead,
       behind,
-      lastCommitDate: '',
+      lastCommitDate: lastCommitDates.get(shortName) ?? '',
       lastCommitMessage: info.label ?? ''
     })
   }
@@ -149,7 +173,12 @@ export async function getLog(
     `--skip=${skip}`,
     `-n`,
     `${limit}`,
-    '--pretty=format:%H%x1f%an%x1f%ad%x1f%s',
+    // %P (parent hashes) lets us flag merge commits (>1 parent) so the UI
+    // can show-but-disable them: they can't be cherry-picked without
+    // choosing a parent (`error: commit <sha> is a merge but no -m option
+    // was given`), and letting one into a run aborts every commit after it
+    // (cherryPickRunner treats it as a fatal, non-conflict error).
+    '--pretty=format:%H%x1f%an%x1f%ad%x1f%s%x1f%P',
     '--date=iso-strict'
   ]
   if (search) {
@@ -161,7 +190,7 @@ export async function getLog(
     .split('\n')
     .filter(Boolean)
     .map((line) => {
-      const [sha, authorName, date, message] = line.split('\x1f')
-      return { sha, authorName, date, message }
+      const [sha, authorName, date, message, parents] = line.split('\x1f')
+      return { sha, authorName, date, message, isMerge: parents.trim().split(' ').length > 1 }
     })
 }

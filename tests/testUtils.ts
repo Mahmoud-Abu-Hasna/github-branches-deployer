@@ -33,12 +33,30 @@ export function createProgressAwaiter(): {
     }
   }
 
+  let seen = 0
+
   function waitFor(
     pred: (event: CherryPickProgressEvent) => boolean
   ): Promise<CherryPickProgressEvent> {
-    const already = events.find(pred)
-    if (already) return Promise.resolve(already)
-    return new Promise((resolve) => waiters.push({ pred, resolve }))
+    // Only match events not already claimed by a previous waitFor call —
+    // otherwise a second waitFor with an overlapping predicate (e.g. two
+    // waits for type === 'conflict' in the same test) immediately resolves
+    // with the already-consumed first match instead of waiting for the next.
+    const already = events.slice(seen).find(pred)
+    if (already) {
+      seen = events.indexOf(already) + 1
+      return Promise.resolve(already)
+    }
+    return new Promise((resolve) => {
+      waiters.push({
+        pred: (event) => {
+          if (!pred(event)) return false
+          seen = events.length
+          return true
+        },
+        resolve
+      })
+    })
   }
 
   return { events, onProgress, waitFor }

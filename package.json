@@ -4,6 +4,7 @@
   "description": "Desktop app to create per-client branches and cherry-pick commits across branches for any git repo.",
   "main": "./out/main/index.js",
   "author": "Mahmoud Hasna",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {

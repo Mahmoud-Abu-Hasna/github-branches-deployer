@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import type { RepoConfig } from '@shared/types'
+import BranchSelect from '../components/BranchSelect'
 
 interface NewBranchDialogProps {
   repo: RepoConfig
@@ -53,10 +54,7 @@ function NewBranchDialog({ repo, onClose, onCreated }: NewBranchDialogProps): Re
           />
         </label>
 
-        <label>
-          Base branch
-          <input type="text" value={fromBranch} onChange={(e) => setFromBranch(e.target.value)} />
-        </label>
+        <BranchSelect repo={repo} label="Base branch" value={fromBranch} onChange={setFromBranch} />
 
         <label className="row" style={{ flexDirection: 'row' }}>
           <input type="checkbox" checked={push} onChange={(e) => setPush(e.target.checked)} />

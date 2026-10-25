@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AlertTriangle, GitBranch } from 'lucide-react'
 import type { BranchInfo, RepoConfig } from '@shared/types'
+import { formatAbsoluteDateTime, formatRelativeDate } from '../../utils/formatDate'
 
 interface TargetBranchPickerStepProps {
   repo: RepoConfig
@@ -97,6 +98,9 @@ function TargetBranchPickerStep({
                   <input type="checkbox" checked={selected.has(b.name)} onChange={() => toggle(b.name)} />
                   <GitBranch size={13} style={{ color: 'var(--text-tertiary)' }} />
                   <span className="commit-message">{b.name}</span>
+                  <span className="muted" title={formatAbsoluteDateTime(b.lastCommitDate)}>
+                    updated {formatRelativeDate(b.lastCommitDate)}
+                  </span>
                   <span className="muted num">
                     {b.ahead > 0 && `+${b.ahead}`} {b.behind > 0 && `-${b.behind}`}
                   </span>

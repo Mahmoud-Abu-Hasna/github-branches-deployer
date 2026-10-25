@@ -26,8 +26,13 @@ function RunProgressStep({
 }: RunProgressStepProps): React.JSX.Element {
   const [log, setLog] = useState<LogLine[]>([])
   const [conflict, setConflict] = useState<ConflictInfo | null>(null)
+  const [conflictActionPending, setConflictActionPending] = useState(false)
   const runIdRef = useRef<string | null>(null)
   const started = useRef(false)
+  // Guards against double-firing continue/abort (e.g. a fast double-click):
+  // `conflictActionPending` state alone isn't enough since a second click can
+  // land before React re-renders with the disabled button.
+  const conflictActionInFlight = useRef(false)
   const { showError } = useToast()
 
   function pushLine(kind: LogKind, text: string): void {
@@ -35,6 +40,16 @@ function RunProgressStep({
   }
 
   function handleEvent(event: CherryPickProgressEvent): void {
+    // `conflict` is derived purely from the event stream, not from whether
+    // continueCherryPick's own call resolved without throwing — that call
+    // resolves successfully both when the run moves past the conflict AND
+    // when it immediately pauses again on the *next* one (applyCommits just
+    // emits another 'conflict' event and returns, it doesn't throw). Clearing
+    // conflict from handleContinue after a successful await raced with, and
+    // could wipe out, the state this case just set for that next conflict.
+    if (event.type !== 'conflict') {
+      setConflict(null)
+    }
     switch (event.type) {
       case 'branch-start':
         pushLine('info', `→ ${event.branch}: starting…`)
@@ -94,25 +109,39 @@ function RunProgressStep({
   }, [])
 
   async function handleContinue(): Promise<void> {
-    if (!runIdRef.current) return
+    if (!runIdRef.current || conflictActionInFlight.current) return
+    conflictActionInFlight.current = true
+    setConflictActionPending(true)
     try {
-      // Only clear the conflict view on success — if continue fails (e.g. a
-      // file still has unresolved conflicts), the user needs to see it again.
+      // Don't clear `conflict` here — handleEvent does it, driven by
+      // whatever event actually comes next (see the comment there). If
+      // continue fails (e.g. a file still has unresolved conflicts), no
+      // event fires at all, so the current conflict view is correctly left
+      // showing.
       await window.api.git.continueCherryPick(runIdRef.current)
-      setConflict(null)
     } catch (err) {
       showError(messageOf(err))
+    } finally {
+      conflictActionInFlight.current = false
+      setConflictActionPending(false)
     }
   }
 
   async function handleAbort(): Promise<void> {
-    if (!runIdRef.current) return
+    if (!runIdRef.current || conflictActionInFlight.current) return
+    conflictActionInFlight.current = true
+    setConflictActionPending(true)
     try {
+      // abortCherryPick always ends the run with a 'run-complete' event,
+      // which clears `conflict` the same way as any other non-conflict
+      // event — see the comment in handleEvent.
       await window.api.git.abortCherryPick(runIdRef.current)
-      setConflict(null)
       pushLine('error', 'Aborted by user.')
     } catch (err) {
       showError(messageOf(err))
+    } finally {
+      conflictActionInFlight.current = false
+      setConflictActionPending(false)
     }
   }
 
@@ -125,6 +154,7 @@ function RunProgressStep({
         files={conflict.files}
         onContinue={handleContinue}
         onAbort={handleAbort}
+        actionPending={conflictActionPending}
       />
     )
   }

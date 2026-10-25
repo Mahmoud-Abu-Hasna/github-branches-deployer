@@ -9,3 +9,8 @@ dist-electron
 .env.local
 _old_stuck_dir
 .claude
+
+# Internal planning docs (kept locally, not published)
+PRODUCT.md
+DESIGN.md
+tasks.md
